@@ -16,6 +16,7 @@ class LibraryService:
         self.elements_dir = self.assets_dir / "elements"
         self.backgrounds_dir = self.assets_dir / "backgrounds"
         self._data: Dict[str, Any] = {}
+        self._inner_cache: Dict[Tuple[str, str, str], Tuple[str, float, float, str, str]] = {}
         self.load()
 
     def load(self) -> None:
@@ -64,6 +65,10 @@ class LibraryService:
 
     def get_element_inner_svg(self, object_id: str, size: str = "l", state: str = "main") -> Tuple[str, float, float, str, str]:
         """Извлекает внутренние теги SVG, ширину, высоту, viewBox и дефы/клипы без искажения namespaces."""
+        cache_key = (object_id, size.lower(), state.lower())
+        if cache_key in self._inner_cache:
+            return self._inner_cache[cache_key]
+
         raw_svg = self.get_element_raw_svg(object_id, size, state)
         root = ET.fromstring(raw_svg)
         
@@ -86,7 +91,9 @@ class LibraryService:
             else:
                 inner_content.append(clean_node)
 
-        return "".join(inner_content), w, h, vb, "".join(defs_content)
+        result = ("".join(inner_content), w, h, vb, "".join(defs_content))
+        self._inner_cache[cache_key] = result
+        return result
 
     def list_components(self) -> List[Dict[str, Any]]:
         """Возвращает список компонентов для каталога UI с масштабируемым превью."""
