@@ -104,6 +104,56 @@ class ComposerServiceTests(TestCase):
         logic_ids = [c["object_id"] for c in res_logic["components"]]
         assert "puzzle" in logic_ids or "lamp" in logic_ids
 
+    def test_pen_layer_and_rotation_hierarchy(self):
+        """Ручка должна лежать поверх книги (выше z_index) и иметь естественный угол наклона -30°."""
+        components = [
+            {"object_id": "book", "state": "main", "width": 520, "height": 350},
+            {"object_id": "pen", "state": "main", "width": 280, "height": 160},
+        ]
+        placed = self.layout.arrange(components, canvas_format="1200x630", layout_type="clustered")
+        book_obj = next(o for o in placed if o["object_id"] == "book")
+        pen_obj = next(o for o in placed if o["object_id"] == "pen")
+
+        # Ручка должна быть строго выше книги по z_index
+        assert pen_obj["z_index"] > book_obj["z_index"]
+        assert pen_obj["rotation"] == -30.0
+
+    def test_bounding_box_auto_centering(self):
+        """Сцена должна быть математически отцентрирована по центру холста (cw/2)."""
+        components = [
+            {"object_id": "book", "state": "main", "width": 520, "height": 350},
+            {"object_id": "lamp", "state": "main", "width": 400, "height": 500},
+            {"object_id": "pen", "state": "main", "width": 280, "height": 160},
+        ]
+        cw = 1200
+        placed = self.layout.arrange(components, canvas_format="1200x630", layout_type="clustered")
+        min_x = min(o["x"] for o in placed)
+        max_x = max(o["x"] + o["width"] for o in placed)
+        center_x = (min_x + max_x) / 2.0
+
+        # Погрешность центрирования не должна превышать 2px
+        assert abs(center_x - (cw / 2.0)) < 2.0
+
+    def test_svg_builder_layer_reordering(self):
+        """Проверка, что изменение z_index меняет фактический порядок тегов <g> в SVG DOM."""
+        obj_a = {"id": "elem_book", "object_id": "book", "size": "l", "state": "main", "x": 100, "y": 100, "z_index": 100}
+        obj_b = {"id": "elem_pen", "object_id": "pen", "size": "l", "state": "main", "x": 120, "y": 120, "z_index": 200}
+
+        svg_forward = self.builder.build_svg([obj_a, obj_b])
+        # При z_index 100 < 200: elem_book рисуется раньше, elem_pen позже (поверх)
+        assert svg_forward.find('id="elem_book"') < svg_forward.find('id="elem_pen"')
+
+        # Меняем слои местами (эквивалент кнопки «▼ Назад» для ручки)
+        obj_a_higher = dict(obj_a, z_index=300)
+        obj_b_lower = dict(obj_b, z_index=100)
+        svg_reversed = self.builder.build_svg([obj_a_higher, obj_b_lower])
+        assert svg_reversed.find('id="elem_pen"') < svg_reversed.find('id="elem_book"')
+
+    def test_default_layout_recommendation(self):
+        """Для обычных тем (образование, финансы) дефолтом должен быть clustered (центрированный остров)."""
+        res = self.nlp.analyze("Дистанционное образование и онлайн-лекции")
+        assert res["recommended_layout"] == "clustered"
+
 
 class ComposerApiTests(TestCase):
     def setUp(self):
@@ -182,3 +232,4 @@ class ComposerApiTests(TestCase):
         data = resp.json()
         assert data["success"] is False
         assert "не могут быть использованы в качестве цветов фона" in data["error"]
+

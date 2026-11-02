@@ -693,9 +693,50 @@ class ComposerApp {
   }
 
   adjustLayer(delta) {
-    const obj = this.state.objects.find((o) => o.id === this.state.selectedId);
-    if (!obj) return;
-    obj.z_index = (obj.z_index || 0) + delta * 5;
+    if (!this.state.selectedId) return;
+
+    // 1. Сортировка текущих объектов по z_index
+    const sorted = [...this.state.objects].sort((a, b) => (a.z_index || 0) - (b.z_index || 0));
+
+    // 2. Поиск индекса выбранного объекта
+    const currentIndex = sorted.findIndex((o) => o.id === this.state.selectedId);
+    if (currentIndex === -1) return;
+
+    const targetIndex = currentIndex + delta;
+    if (targetIndex < 0 || targetIndex >= sorted.length) {
+      this.setStatus(delta > 0 ? "Объект уже на самом верхнем слое" : "Объект уже на самом нижнем слое");
+      return;
+    }
+
+    // 3. Обмен местами в массиве слоев
+    const temp = sorted[currentIndex];
+    sorted[currentIndex] = sorted[targetIndex];
+    sorted[targetIndex] = temp;
+
+    // 4. Назначение строгой последовательной шкалы z_index (100, 200, 300...)
+    sorted.forEach((obj, idx) => {
+      obj.z_index = (idx + 1) * 100;
+    });
+
+    this.state.objects = sorted;
+
+    // 5. Мгновенная перестановка в DOM для нулевой задержки отклика
+    const el = document.getElementById(this.state.selectedId);
+    if (el && el.parentNode) {
+      if (delta > 0) {
+        const next = el.nextElementSibling;
+        if (next && next.classList.contains("scene-object")) {
+          next.after(el);
+        }
+      } else {
+        const prev = el.previousElementSibling;
+        if (prev && prev.classList.contains("scene-object")) {
+          prev.before(el);
+        }
+      }
+    }
+
+    this.setStatus(`Слой изменен: ${temp.name_ru || temp.object_id}`);
     this.recomputeOrUpdate();
   }
 
@@ -706,8 +747,15 @@ class ComposerApp {
     copy.id = "c_" + Math.random().toString(36).substring(2, 8);
     copy.x += 35;
     copy.y += 35;
-    copy.z_index = (obj.z_index || 0) + 1;
+    copy.z_index = (obj.z_index || 0) + 10;
     this.state.objects.push(copy);
+
+    // Нормализация z_index для сохранения строгого порядка
+    this.state.objects.sort((a, b) => (a.z_index || 0) - (b.z_index || 0));
+    this.state.objects.forEach((o, idx) => {
+      o.z_index = (idx + 1) * 100;
+    });
+
     this.recomputeOrUpdate();
     setTimeout(() => this.selectObject(copy.id), 200);
   }

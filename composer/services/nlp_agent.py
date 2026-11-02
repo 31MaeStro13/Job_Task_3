@@ -102,9 +102,9 @@ class NlpMetaphorAgent:
             })
 
         # 3. Выбор рекомендуемого лейаута
-        # Если текст похож на заголовок статьи/поста или содержит слова "как", "почему", "курс", "отчет"
-        is_headline_pattern = any(w in text_clean for w in ["как", "заголовок", "курс", "статья", "пост", "отчет", "руководство", "гайды"])
-        is_dynamic_pattern = any(w in text_clean for w in ["рост", "интеграция", "движение", "развитие", "путь", "процесс", "шаг"])
+        # clustered — строгий дефолт для центрированной гармоничной композиции
+        is_headline_pattern = any(w in text_clean for w in ["под заголовок", "заголовок слева", "баннер", "обложка с текстом", "место под текст"])
+        is_dynamic_pattern = any(w in text_clean for w in ["динамика", "каскад", "диагональ"])
 
         if is_headline_pattern:
             layout = "under_headline"
@@ -139,13 +139,13 @@ class NlpMetaphorAgent:
             "- wallet (Кошелек)\n- puzzle (Пазлы)\n- coin (Монета)\n- folder (Папка)\n"
             "- pen (Ручка)\n- vase (Ваза с цветами)\n\n"
             "Схемы компоновки (layout):\n"
-            "- under_headline (если это заголовок статьи/поста, свободная зона слева)\n"
-            "- offset (динамичная диагональ)\n"
-            "- clustered (цельный изометрический остров в центре)\n\n"
+            "- clustered (ОСНОВНОЙ ВЫБОР ПО УМОЛЧАНИЮ: цельная центрированная композиция в центре холста)\n"
+            "- under_headline (ИСКЛЮЧИТЕЛЬНО если прямо требуется баннер или заголовок с местом слева)\n"
+            "- offset (динамичный диагональный каскад)\n\n"
             "Верни ответ СТРОГО в JSON:\n"
             "{\n"
             '  "components": [{"object_id": "book", "state": "main"}, {"object_id": "lamp", "state": "bg"}],\n'
-            '  "layout": "under_headline",\n'
+            '  "layout": "clustered",\n'
             '  "reasoning": "Краткое арт-обоснование метафоры на русском (1-2 предложения)"\n'
             "}"
         )
