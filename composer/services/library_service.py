@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
@@ -55,8 +56,14 @@ class LibraryService:
         with open(fpath, "r", encoding="utf-8") as f:
             return f.read()
 
+    def clean_svg_namespaces(self, text: str) -> str:
+        text = re.sub(r'<(/?)ns\d+:([a-zA-Z0-9_-]+)', r'<\1\2', text)
+        text = re.sub(r'\sxmlns:ns\d+="[^"]*"', '', text)
+        text = re.sub(r'\sxmlns="[^"]*"', '', text)
+        return text
+
     def get_element_inner_svg(self, object_id: str, size: str = "l", state: str = "main") -> Tuple[str, float, float, str, str]:
-        """Извлекает внутренние теги SVG, ширину, высоту, viewBox и дефы/клипы."""
+        """Извлекает внутренние теги SVG, ширину, высоту, viewBox и дефы/клипы без искажения namespaces."""
         raw_svg = self.get_element_raw_svg(object_id, size, state)
         root = ET.fromstring(raw_svg)
         
@@ -69,22 +76,31 @@ class LibraryService:
 
         for child in root:
             tag = child.tag.split("}")[-1]
+            raw_node = ET.tostring(child, encoding="unicode")
+            clean_node = self.clean_svg_namespaces(raw_node)
             if tag == "defs":
+                # извлекаем детей дефов
                 for def_child in child:
-                    defs_content.append(ET.tostring(def_child, encoding="unicode"))
+                    clean_def = self.clean_svg_namespaces(ET.tostring(def_child, encoding="unicode"))
+                    defs_content.append(clean_def)
             else:
-                inner_content.append(ET.tostring(child, encoding="unicode"))
+                inner_content.append(clean_node)
 
         return "".join(inner_content), w, h, vb, "".join(defs_content)
 
     def list_components(self) -> List[Dict[str, Any]]:
-        """Возвращает список компонентов для каталога UI с превью."""
+        """Возвращает список компонентов для каталога UI с масштабируемым превью."""
         result = []
         for obj_id, meta in self.objects.items():
             try:
                 preview = self.get_element_raw_svg(obj_id, "s", "main")
             except Exception:
                 preview = self.get_element_raw_svg(obj_id, "l", "main")
+
+            # Обеспечиваем масштабируемость превью для карточек
+            preview_clean = self.clean_svg_namespaces(preview)
+            preview_clean = re.sub(r'(<svg\b[^>]*?\swidth=)["\'][^"\']*["\']', r'\1"100%"', preview_clean)
+            preview_clean = re.sub(r'(<svg\b[^>]*?\sheight=)["\'][^"\']*["\']', r'\1"100%"', preview_clean)
 
             result.append({
                 "id": obj_id,
@@ -93,6 +109,6 @@ class LibraryService:
                 "category": meta.get("category", "general"),
                 "keywords": meta.get("keywords", []),
                 "default_role": meta.get("default_role", "main"),
-                "preview_svg": preview,
+                "preview_svg": preview_clean,
             })
         return result
