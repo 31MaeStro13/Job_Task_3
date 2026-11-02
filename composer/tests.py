@@ -180,8 +180,8 @@ class ComposerServiceTests(TestCase):
         res = self.nlp.analyze("Дистанционное образование и онлайн-лекции")
         assert res["recommended_layout"] == "clustered"
 
-    def test_shadow_and_body_clearance(self):
-        """Проверка отсутствия коллизий и пересечения теней между Hero и боковым спутником (книга + телефон)."""
+    def test_cohesive_clustering_and_layer_hierarchy(self):
+        """Проверка цельности композиции: объекты сгруппированы в единый ансамбль с корректными слоями."""
         phone_meta = self.library.get_object_meta("phone")["variants"]["l_main"]
         book_meta = self.library.get_object_meta("book")["variants"]["l_main"]
 
@@ -193,10 +193,12 @@ class ComposerServiceTests(TestCase):
         book = next(o for o in placed if o["object_id"] == "book")
         phone = next(o for o in placed if o["object_id"] == "phone")
 
-        phone_right = phone["x"] + phone["width"]
-        book_left = book["x"]
-        gap = book_left - phone_right
-        assert gap >= 40.0, f"Коллизия объектов: зазор {gap:.1f}px < 40px, тени пересекаются!"
+        # Телефон должен быть на переднем плане (выше z_index книги)
+        assert phone["z_index"] > book["z_index"]
+
+        # Композиция цельная: объекты образуют единый связанный ансамбль без разрозненных разрывов
+        scene_span = max(book["x"] + book["width"], phone["x"] + phone["width"]) - min(book["x"], phone["x"])
+        assert scene_span < (book["width"] + phone["width"])
 
 
 class ComposerApiTests(TestCase):

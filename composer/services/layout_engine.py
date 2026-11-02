@@ -222,48 +222,37 @@ class LayoutEngine:
             if slot_name == "hero":
                 return (table_cx, table_cy)
 
-            # Безопасный зазор для исключения наложения теней (shadow clipping)
-            clearance = 55.0
-
+            # Плотная изометрическая группировка (cohesive cluster):
+            # Объекты компонуются вокруг базового плато в единый гармоничный натюрморт
             if slot_name == "mid_left":
-                dx = hero_hw + hw + clearance
-                dy = 20.0
-                return (table_cx - dx, table_cy - dy)
+                dx = (hero_hw * 0.65) + (hw * 0.45)
+                dy = (hero_hh * 0.15) + (hh * 0.15)
+                return (table_cx - dx, table_cy + dy)
 
             elif slot_name == "mid_right":
-                dx = hero_hw + hw + clearance
-                dy = 15.0
+                dx = (hero_hw * 0.70) + (hw * 0.50)
+                dy = (hero_hh * 0.10)
                 return (table_cx + dx, table_cy - dy)
 
             elif slot_name == "back_left":
-                dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
-                dy = (hero_hh * 0.70) + (hh * 0.40) + 40.0
+                dx = (hero_hw * 0.50) + (hw * 0.40)
+                dy = (hero_hh * 0.55) + (hh * 0.35)
                 return (table_cx - dx * cos30, table_cy - dy)
 
             elif slot_name == "back_right":
-                dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
-                dy = (hero_hh * 0.70) + (hh * 0.40) + 35.0
-                return (table_cx + dx * cos30, table_cy - dy + 10)
+                dx = (hero_hw * 0.50) + (hw * 0.40)
+                dy = (hero_hh * 0.55) + (hh * 0.35)
+                return (table_cx + dx * cos30, table_cy - dy)
 
             elif slot_name == "front_left":
-                if obj["object_id"] == "pen":
-                    dx = hero_hw * 0.65 + 30.0
-                    dy = hero_hh * 0.40 + 30.0
-                    return (table_cx - dx, table_cy + dy)
-                else:
-                    dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
-                    dy = (hero_hh * 0.50) + (hh * 0.50) + 40.0
-                    return (table_cx - dx * cos30, table_cy + dy * sin30)
+                dx = (hero_hw * 0.40) + (hw * 0.30)
+                dy = (hero_hh * 0.25) + (hh * 0.25)
+                return (table_cx - dx, table_cy + dy)
 
             elif slot_name == "front_right":
-                if obj["object_id"] == "pen":
-                    dx = hero_hw * 0.65 + 30.0
-                    dy = hero_hh * 0.40 + 30.0
-                    return (table_cx + dx, table_cy + dy)
-                else:
-                    dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
-                    dy = (hero_hh * 0.50) + (hh * 0.50) + 40.0
-                    return (table_cx + dx * cos30, table_cy + dy * sin30)
+                dx = (hero_hw * 0.40) + (hw * 0.30)
+                dy = (hero_hh * 0.25) + (hh * 0.25)
+                return (table_cx + dx, table_cy + dy)
 
             return (table_cx, table_cy)
 
@@ -281,7 +270,7 @@ class LayoutEngine:
 
             rotation = 0.0
             on_surface = False
-            if obj["object_id"] == "pen":
+            if obj["object_id"] in ("pen", "coin"):
                 on_surface = True
 
             result.append({
@@ -328,15 +317,15 @@ class LayoutEngine:
                     place_at_slot(sm, sname, "main")
                     break
 
-        # 5. Фоновые монохромные силуэты формируют глубину сзади
-        bg_dx = hero_hw + 160.0
-        bg_dy = hero_hh + 80.0
+        # 5. Фоновые монохромные силуэты компактно обрамляют композицию сзади
+        bg_dx = hero_hw * 0.55 + 25.0
+        bg_dy = hero_hh * 0.60 + 20.0
         bg_slots = [
-            (table_cx - bg_dx * cos30, table_cy - bg_dy - 50),
-            (table_cx + bg_dx * cos30, table_cy - bg_dy - 40),
-            (table_cx, table_cy - bg_dy - 90),
-            (table_cx - bg_dx - 60, table_cy - 40),
-            (table_cx + bg_dx + 60, table_cy - 30),
+            (table_cx - bg_dx * cos30, table_cy - bg_dy - 15),
+            (table_cx + bg_dx * cos30, table_cy - bg_dy - 10),
+            (table_cx, table_cy - bg_dy - 30),
+            (table_cx - bg_dx - 25, table_cy - 10),
+            (table_cx + bg_dx + 25, table_cy - 10),
         ]
         for i, bg in enumerate(bg_objs):
             pos = bg_slots[i % len(bg_slots)]
@@ -376,25 +365,25 @@ class LayoutEngine:
     def _layout_offset(
         self, main_objs: List[Dict[str, Any]], bg_objs: List[Dict[str, Any]], cw: float, ch: float, size: str
     ) -> List[Dict[str, Any]]:
-        """Диагональный каскад из верхнего левого в нижний правый угол."""
+        """Динамический изометрический каскад (лесенка) вдоль оси 30 градусов."""
         result = []
         all_objs = main_objs + bg_objs
         total = len(all_objs)
         if total == 0:
             return result
 
-        # Линия диагонального стола
-        start_x, start_y = cw * 0.22, ch * 0.40
-        end_x, end_y = cw * 0.80, ch * 0.85
+        table_cx = cw * 0.50
+        table_cy = ch * 0.58
+        span = (total - 1) / 2.0
+        step_x = min(115.0, max(70.0, 380.0 / max(1, total)))
+        step_y = step_x * 0.577
 
         for i, obj in enumerate(all_objs):
-            t = (i + 0.5) / total
             is_bg = obj.get("state") == "bg"
+            idx_offset = i - span
 
-            # Изометрическое колебание
-            lateral_offset = 60 * math.sin(i * 2.1)
-            gx = start_x + (end_x - start_x) * t + lateral_offset
-            gy = start_y + (end_y - start_y) * t + (-30 if is_bg else 15)
+            gx = table_cx + (idx_offset * step_x) + (20.0 if is_bg else -20.0)
+            gy = table_cy + (idx_offset * step_y) + (-35.0 if is_bg else 15.0)
 
             scale = self._get_scale(obj["object_id"], size)
             w = obj.get("width", 400) * scale
