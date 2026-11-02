@@ -105,7 +105,7 @@ class ComposerServiceTests(TestCase):
         assert "puzzle" in logic_ids or "lamp" in logic_ids
 
     def test_pen_layer_and_rotation_hierarchy(self):
-        """Ручка должна лежать поверх книги (выше z_index) и иметь естественный угол наклона -30°."""
+        """Ручка должна лежать поверх книги (выше z_index) и иметь естественный угол наклона 0.0 (изометрия Figma)."""
         components = [
             {"object_id": "book", "state": "main", "width": 520, "height": 350},
             {"object_id": "pen", "state": "main", "width": 280, "height": 160},
@@ -116,7 +116,33 @@ class ComposerServiceTests(TestCase):
 
         # Ручка должна быть строго выше книги по z_index
         assert pen_obj["z_index"] > book_obj["z_index"]
-        assert pen_obj["rotation"] == -30.0
+        assert pen_obj["rotation"] == 0.0
+
+    def test_uniform_scale_preserves_figma_proportions(self):
+        """Проверка строгого сохранения пропорций Figma 1:1 между объектами сцены."""
+        components = [
+            {"object_id": "book", "state": "main", "width": 1446.0, "height": 977.0},
+            {"object_id": "phone", "state": "main", "width": 797.0, "height": 462.0},
+            {"object_id": "coin", "state": "main", "width": 287.0, "height": 262.0},
+            {"object_id": "pen", "state": "main", "width": 509.0, "height": 286.0},
+        ]
+        placed = self.layout.arrange(components, canvas_format="1200x630", layout_type="clustered")
+        book = next(o for o in placed if o["object_id"] == "book")
+        phone = next(o for o in placed if o["object_id"] == "phone")
+        coin = next(o for o in placed if o["object_id"] == "coin")
+        pen = next(o for o in placed if o["object_id"] == "pen")
+
+        # Масштаб всех объектов должен быть строго одинаковым (Figma 1:1)
+        assert book["scale"] == phone["scale"] == coin["scale"] == pen["scale"]
+
+        # Соотношение экранных ширин строго равно отношению ширин в Figma (1:1)
+        expected_ratio_phone = 797.0 / 1446.0
+        actual_ratio_phone = phone["width"] / book["width"]
+        assert abs(actual_ratio_phone - expected_ratio_phone) < 0.005
+
+        expected_ratio_coin = 287.0 / 1446.0
+        actual_ratio_coin = coin["width"] / book["width"]
+        assert abs(actual_ratio_coin - expected_ratio_coin) < 0.005
 
     def test_bounding_box_auto_centering(self):
         """Сцена должна быть математически отцентрирована по центру холста (cw/2)."""

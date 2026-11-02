@@ -197,17 +197,21 @@ class ComposerApp {
     // Inspector Events
     this.closeInspectorBtn.addEventListener("click", () => this.deselectObject());
 
-    this.scaleRange.addEventListener("input", (e) => {
-      const val = parseFloat(e.target.value);
-      this.scaleValue.textContent = `${val.toFixed(2)}x`;
-      this.updateSelectedProperty("scale", val);
-    });
+    if (this.scaleRange) {
+      this.scaleRange.addEventListener("input", (e) => {
+        const val = parseFloat(e.target.value);
+        if (this.scaleValue) this.scaleValue.textContent = `${val.toFixed(2)}x`;
+        this.updateSelectedProperty("scale", val);
+      });
+    }
 
-    this.rotateRange.addEventListener("input", (e) => {
-      const val = parseInt(e.target.value, 10);
-      this.rotateValue.textContent = `${val}°`;
-      this.updateSelectedProperty("rotation", val);
-    });
+    if (this.rotateRange) {
+      this.rotateRange.addEventListener("input", (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (this.rotateValue) this.rotateValue.textContent = `${val}°`;
+        this.updateSelectedProperty("rotation", val);
+      });
+    }
 
     this.bringForwardBtn.addEventListener("click", () => this.adjustLayer(1));
     this.sendBackwardBtn.addEventListener("click", () => this.adjustLayer(-1));
@@ -665,10 +669,10 @@ class ComposerApp {
     if (obj) {
       this.inspector.classList.remove("hidden");
       document.getElementById("inspectorTitle").textContent = `${obj.name_ru || obj.object_id} (${obj.state})`;
-      this.scaleRange.value = obj.scale || 1.0;
-      this.scaleValue.textContent = `${(obj.scale || 1.0).toFixed(2)}x`;
-      this.rotateRange.value = obj.rotation || 0;
-      this.rotateValue.textContent = `${obj.rotation || 0}°`;
+      if (this.scaleRange) this.scaleRange.value = obj.scale || 1.0;
+      if (this.scaleValue) this.scaleValue.textContent = `${(obj.scale || 1.0).toFixed(2)}x`;
+      if (this.rotateRange) this.rotateRange.value = obj.rotation || 0;
+      if (this.rotateValue) this.rotateValue.textContent = `${obj.rotation || 0}°`;
     }
   }
 

@@ -35,33 +35,16 @@ class LayoutEngine:
         "pen": "small",
     }
 
-    # Масштабирование объектов для гармоничного соотношения размеров
-    BASE_SCALES = {
-        "l": {
-            "book": 0.36,
-            "folder": 0.38,
-            "lamp": 0.33,
-            "vase": 0.38,
-            "phone": 0.45,
-            "headphones": 0.40,
-            "wallet": 0.48,
-            "puzzle": 0.50,
-            "coin": 0.58,
-            "pen": 0.55,
-        },
-        "s": {
-            "book": 0.65,
-            "folder": 0.68,
-            "lamp": 0.60,
-            "vase": 0.68,
-            "phone": 0.75,
-            "headphones": 0.70,
-            "wallet": 0.75,
-            "puzzle": 0.80,
-            "coin": 0.85,
-            "pen": 0.80,
-        }
+    # Единый масштаб композиции 1:1 к исходным размерам в Figma
+    # Сохраняет строгие пропорции между всеми объектами ТЗ
+    FORMAT_SCALES = {
+        "1200x630": {"l": 0.35, "s": 0.70},
+        "1000x1000": {"l": 0.38, "s": 0.76},
+        "800x1200": {"l": 0.32, "s": 0.64},
     }
+
+    # Для обратной совместимости
+    BASE_SCALES = FORMAT_SCALES
 
     def arrange(
         self,
@@ -70,6 +53,7 @@ class LayoutEngine:
         detail_size: str = "l",
         layout_type: str = "clustered",
     ) -> List[Dict[str, Any]]:
+        self._current_format = canvas_format
         spec = self.FORMAT_SPECS.get(canvas_format, self.FORMAT_SPECS["1200x630"])
         cw = spec["width"]
         ch = spec["height"]
@@ -165,9 +149,10 @@ class LayoutEngine:
 
         return placed
 
-    def _get_scale(self, object_id: str, size: str) -> float:
-        scales = self.BASE_SCALES.get(size, self.BASE_SCALES["l"])
-        return scales.get(object_id, 0.45)
+    def _get_scale(self, object_id: str = "", size: str = "l", canvas_format: Optional[str] = None) -> float:
+        fmt = canvas_format or getattr(self, "_current_format", "1200x630")
+        fmt_scales = self.FORMAT_SCALES.get(fmt, self.FORMAT_SCALES["1200x630"])
+        return fmt_scales.get(size, 0.35)
 
     def _layout_clustered(
         self,
@@ -287,8 +272,6 @@ class LayoutEngine:
         def place_at_slot(obj: Dict[str, Any], slot_name: str, state: str):
             gx, gy = get_slot_coords(obj, slot_name, state)
             scale = self._get_scale(obj["object_id"], size)
-            if state == "bg":
-                scale *= 0.88
             w = obj.get("width", 400) * scale
             h = obj.get("height", 400) * scale
 
@@ -298,9 +281,7 @@ class LayoutEngine:
 
             rotation = 0.0
             on_surface = False
-            # Ручка рядом с книгой получает красивый естественный угол
             if obj["object_id"] == "pen":
-                rotation = -30.0
                 on_surface = True
 
             result.append({
@@ -359,7 +340,7 @@ class LayoutEngine:
         ]
         for i, bg in enumerate(bg_objs):
             pos = bg_slots[i % len(bg_slots)]
-            scale = self._get_scale(bg["object_id"], size) * 0.85
+            scale = self._get_scale(bg["object_id"], size)
             w = bg.get("width", 400) * scale
             h = bg.get("height", 400) * scale
             result.append({
@@ -415,7 +396,7 @@ class LayoutEngine:
             gx = start_x + (end_x - start_x) * t + lateral_offset
             gy = start_y + (end_y - start_y) * t + (-30 if is_bg else 15)
 
-            scale = self._get_scale(obj["object_id"], size) * (0.85 if is_bg else 1.0)
+            scale = self._get_scale(obj["object_id"], size)
             w = obj.get("width", 400) * scale
             h = obj.get("height", 400) * scale
 
