@@ -4,15 +4,21 @@ from typing import List, Dict, Any, Tuple, Optional
 
 
 class LayoutEngine:
-    """Интеллектуальный слотовый движок изометрической компоновки.
+    """Интеллектуальный слотовый движок изометрической композиции Figma (3 пространственные зоны).
     
-    Решает ключевые проблемы компоновки:
-    1. Привязка объектов по нижней точке касания стола (Bottom-Center Ground Plane)
-       вместо левого верхнего угла bounding box.
-    2. Типология объектов: базовые плато (Книга, Папка) в центре, вертикальные
-       акценты (Лампа, Ваза) сзади, малые спутники (Ручка, Монета, Пазл) вокруг.
-    3. Z-Index строго по изометрической глубине (Ground Y): чем ближе подошва
-       к зрителю, тем выше слой.
+    Основан на прямых координатных замерах эталонов Figma:
+    - drop_clustered_l.svg (Собранно: трехзонный изометрический остров)
+    - drop_headline_l.svg (Под заголовок: правая фокусировка, свободная левая зона)
+    - drop_offset_l.svg (Со смещением: диагональный каскадный контрбаланс)
+    
+    Архитектурные принципы:
+    1. Изометрическое зонирование:
+       - Зона 1 (Левый остров / Базовое плато): Книга / Папка на столе, Телефон / Пазлы на поверхности.
+       - Зона 2 (Центральный мост): Наушники / Кошелек, визуально связывающие левый и правый острова.
+       - Зона 3 (Правый контрбаланс): Лампа / Ваза на заднем плане, Ручка / Монета на переднем плане.
+    2. Единый масштаб 1:1 к Figma (FORMAT_SCALES) без искажения пропорций объектов.
+    3. Z-Index строго по изометрической глубине (Ground Y) + приоритет поверхности (on_surface).
+    4. Автоматическое математическое центрирование итогового bounding box сцены.
     """
 
     FORMAT_SPECS = {
@@ -21,7 +27,7 @@ class LayoutEngine:
         "800x1200": {"width": 800, "height": 1200, "ground_ratio_y": 0.70},
     }
 
-    # Классификация объектов библиотеки
+    # Классификация объектов библиотеки по роли в изометрической композиции
     OBJECT_TYPES = {
         "book": "base",
         "folder": "base",
@@ -36,7 +42,6 @@ class LayoutEngine:
     }
 
     # Единый масштаб композиции 1:1 к исходным размерам в Figma
-    # Сохраняет строгие пропорции между всеми объектами ТЗ
     FORMAT_SCALES = {
         "1200x630": {"l": 0.35, "s": 0.70},
         "1000x1000": {"l": 0.38, "s": 0.76},
@@ -45,6 +50,139 @@ class LayoutEngine:
 
     # Для обратной совместимости
     BASE_SCALES = FORMAT_SCALES
+
+    # Композиционные слоты, выверенные по эталонам Figma
+    SLOT_TEMPLATES = {
+        "1200x630": {
+            "clustered": {
+                "main": [
+                    ("zone1_base", 0.255, 0.818, False),
+                    ("zone1_surface_1", 0.250, 0.583, True),
+                    ("zone1_surface_2", 0.248, 0.497, True),
+                    ("zone2_bridge", 0.603, 0.760, False),
+                    ("zone3_tall", 0.840, 0.599, False),
+                    ("zone3_front", 0.840, 0.862, False),
+                    ("zone2_rear", 0.500, 0.580, False),
+                    ("zone1_front", 0.180, 0.880, False),
+                    ("zone3_mid", 0.720, 0.680, False),
+                ],
+                "bg": [(0.200, 0.440), (0.380, 0.420), (0.600, 0.420), (0.780, 0.440), (0.900, 0.460)],
+            },
+            "under_headline": {
+                "main": [
+                    ("zone1_base", 0.557, 0.683, False),
+                    ("zone1_surface_1", 0.554, 0.548, True),
+                    ("zone1_surface_2", 0.553, 0.498, True),
+                    ("zone2_bridge", 0.757, 0.650, False),
+                    ("zone3_tall", 0.894, 0.557, False),
+                    ("zone3_front", 0.894, 0.708, False),
+                    ("zone2_rear", 0.700, 0.500, False),
+                    ("zone1_front", 0.520, 0.750, False),
+                    ("zone3_mid", 0.820, 0.600, False),
+                ],
+                "bg": [(0.520, 0.420), (0.700, 0.400), (0.880, 0.420), (0.600, 0.380), (0.800, 0.380)],
+            },
+            "offset": {
+                "main": [
+                    ("zone_left_tall", 0.160, 0.599, False),
+                    ("zone_left_front", 0.160, 0.862, False),
+                    ("zone_mid_bridge", 0.397, 0.760, False),
+                    ("zone_right_base", 0.745, 0.818, False),
+                    ("zone_right_surface_1", 0.776, 0.595, True),
+                    ("zone_right_surface_2", 0.793, 0.513, True),
+                    ("zone_mid_rear", 0.480, 0.580, False),
+                    ("zone_right_front", 0.820, 0.880, False),
+                ],
+                "bg": [(0.250, 0.420), (0.550, 0.400), (0.850, 0.420), (0.400, 0.380), (0.700, 0.380)],
+            },
+        },
+        "1000x1000": {
+            "clustered": {
+                "main": [
+                    ("zone1_base", 0.320, 0.780, False),
+                    ("zone1_surface_1", 0.310, 0.580, True),
+                    ("zone1_surface_2", 0.300, 0.500, True),
+                    ("zone2_bridge", 0.620, 0.720, False),
+                    ("zone3_tall", 0.780, 0.540, False),
+                    ("zone3_front", 0.760, 0.840, False),
+                    ("zone2_rear", 0.500, 0.520, False),
+                    ("zone1_front", 0.220, 0.840, False),
+                    ("zone3_mid", 0.700, 0.640, False),
+                ],
+                "bg": [(0.250, 0.400), (0.420, 0.380), (0.600, 0.380), (0.780, 0.400), (0.880, 0.420)],
+            },
+            "under_headline": {
+                "main": [
+                    ("zone1_base", 0.580, 0.720, False),
+                    ("zone1_surface_1", 0.570, 0.560, True),
+                    ("zone1_surface_2", 0.560, 0.500, True),
+                    ("zone2_bridge", 0.780, 0.680, False),
+                    ("zone3_tall", 0.860, 0.520, False),
+                    ("zone3_front", 0.840, 0.800, False),
+                    ("zone2_rear", 0.700, 0.480, False),
+                    ("zone1_front", 0.520, 0.780, False),
+                    ("zone3_mid", 0.820, 0.620, False),
+                ],
+                "bg": [(0.550, 0.400), (0.720, 0.380), (0.860, 0.400), (0.620, 0.360), (0.800, 0.360)],
+            },
+            "offset": {
+                "main": [
+                    ("zone_left_tall", 0.220, 0.540, False),
+                    ("zone_left_front", 0.240, 0.820, False),
+                    ("zone_mid_bridge", 0.450, 0.720, False),
+                    ("zone_right_base", 0.720, 0.780, False),
+                    ("zone_right_surface_1", 0.730, 0.580, True),
+                    ("zone_right_surface_2", 0.740, 0.500, True),
+                    ("zone_mid_rear", 0.500, 0.540, False),
+                    ("zone_right_front", 0.780, 0.840, False),
+                ],
+                "bg": [(0.300, 0.380), (0.550, 0.360), (0.800, 0.380), (0.420, 0.350), (0.700, 0.350)],
+            },
+        },
+        "800x1200": {
+            "clustered": {
+                "main": [
+                    ("zone1_base", 0.350, 0.720, False),
+                    ("zone1_surface_1", 0.340, 0.560, True),
+                    ("zone1_surface_2", 0.330, 0.490, True),
+                    ("zone2_bridge", 0.600, 0.650, False),
+                    ("zone3_tall", 0.720, 0.480, False),
+                    ("zone3_front", 0.680, 0.800, False),
+                    ("zone2_rear", 0.500, 0.460, False),
+                    ("zone1_front", 0.240, 0.780, False),
+                    ("zone3_mid", 0.660, 0.580, False),
+                ],
+                "bg": [(0.280, 0.360), (0.450, 0.340), (0.600, 0.340), (0.750, 0.360), (0.850, 0.380)],
+            },
+            "under_headline": {
+                "main": [
+                    ("zone1_base", 0.600, 0.680, False),
+                    ("zone1_surface_1", 0.590, 0.540, True),
+                    ("zone1_surface_2", 0.580, 0.480, True),
+                    ("zone2_bridge", 0.780, 0.640, False),
+                    ("zone3_tall", 0.840, 0.460, False),
+                    ("zone3_front", 0.800, 0.760, False),
+                    ("zone2_rear", 0.700, 0.440, False),
+                    ("zone1_front", 0.540, 0.720, False),
+                    ("zone3_mid", 0.780, 0.560, False),
+                ],
+                "bg": [(0.560, 0.360), (0.720, 0.340), (0.850, 0.360), (0.620, 0.320), (0.780, 0.320)],
+            },
+            "offset": {
+                "main": [
+                    ("zone_left_tall", 0.260, 0.480, False),
+                    ("zone_left_front", 0.280, 0.780, False),
+                    ("zone_mid_bridge", 0.480, 0.650, False),
+                    ("zone_right_base", 0.680, 0.720, False),
+                    ("zone_right_surface_1", 0.690, 0.550, True),
+                    ("zone_right_surface_2", 0.700, 0.480, True),
+                    ("zone_mid_rear", 0.520, 0.500, False),
+                    ("zone_right_front", 0.740, 0.800, False),
+                ],
+                "bg": [(0.320, 0.340), (0.520, 0.320), (0.750, 0.340), (0.420, 0.300), (0.680, 0.300)],
+            },
+        },
+    }
 
     def arrange(
         self,
@@ -61,7 +199,7 @@ class LayoutEngine:
         if not components:
             return []
 
-        # 1. Сортировка объектов по смысловой роли для распределения по слотам
+        # 1. Разделение на главные и фоновые объекты
         main_objs = [dict(c) for c in components if c.get("state") == "main"]
         bg_objs = [dict(c) for c in components if c.get("state") == "bg"]
 
@@ -78,7 +216,7 @@ class LayoutEngine:
         else:
             placed = self._layout_clustered(main_objs, bg_objs, cw, ch, detail_size)
 
-        # 3. Расчет Z-Index по реальной экранной высоте подошвы (Ground Y)
+        # 3. Расчет Z-Index по реальной экранной высоте подошвы (Ground Y) + приоритет поверхности
         for item in placed:
             ground_y = item["y"] + item["height"]
             base_z = int(ground_y)
@@ -154,6 +292,188 @@ class LayoutEngine:
         fmt_scales = self.FORMAT_SCALES.get(fmt, self.FORMAT_SCALES["1200x630"])
         return fmt_scales.get(size, 0.35)
 
+    def _allocate_slots(
+        self, main_objs: List[Dict[str, Any]], layout_type: str, canvas_format: str
+    ) -> Tuple[Dict[str, Tuple[Dict[str, Any], bool, float, float]], List[Tuple[float, float]]]:
+        """Распределение объектов по пространственным слотам изометрической композиции."""
+        fmt_data = self.SLOT_TEMPLATES.get(canvas_format, self.SLOT_TEMPLATES["1200x630"])
+        layout_data = fmt_data.get(layout_type, fmt_data["clustered"])
+        slots = layout_data["main"]
+        slot_map = {s[0]: s for s in slots}
+
+        bases = [o for o in main_objs if self.OBJECT_TYPES.get(o["object_id"]) == "base"]
+        talls = [o for o in main_objs if self.OBJECT_TYPES.get(o["object_id"]) == "tall"]
+        smalls = [o for o in main_objs if self.OBJECT_TYPES.get(o["object_id"]) == "small"]
+        mediums = [o for o in main_objs if self.OBJECT_TYPES.get(o["object_id"], "medium") == "medium"]
+
+        assigned: Dict[str, Tuple[Dict[str, Any], bool, float, float]] = {}
+
+        if layout_type == "offset":
+            # Левый верхний фланг: высокий вертикальный акцент
+            if talls:
+                s = slot_map["zone_left_tall"]
+                assigned["zone_left_tall"] = (talls.pop(0), False, s[1], s[2])
+            elif mediums:
+                s = slot_map["zone_left_tall"]
+                assigned["zone_left_tall"] = (mediums.pop(0), False, s[1], s[2])
+
+            # Правый фланг: базовое плато с поверхностью
+            if bases:
+                s = slot_map["zone_right_base"]
+                assigned["zone_right_base"] = (bases.pop(0), False, s[1], s[2])
+                surf_cand = [m for m in mediums if m["object_id"] == "phone"]
+                if surf_cand:
+                    mediums.remove(surf_cand[0])
+                    s1 = slot_map["zone_right_surface_1"]
+                    assigned["zone_right_surface_1"] = (surf_cand[0], True, s1[1], s1[2])
+                elif smalls:
+                    s1 = slot_map["zone_right_surface_1"]
+                    assigned["zone_right_surface_1"] = (smalls.pop(0), True, s1[1], s1[2])
+                if smalls:
+                    s2 = slot_map["zone_right_surface_2"]
+                    assigned["zone_right_surface_2"] = (smalls.pop(0), True, s2[1], s2[2])
+            elif mediums:
+                s = slot_map["zone_right_base"]
+                assigned["zone_right_base"] = (mediums.pop(0), False, s[1], s[2])
+                if smalls:
+                    s1 = slot_map["zone_right_surface_1"]
+                    assigned["zone_right_surface_1"] = (smalls.pop(0), True, s1[1], s1[2])
+
+            # Центральный диагональный мост
+            if mediums:
+                s = slot_map["zone_mid_bridge"]
+                assigned["zone_mid_bridge"] = (mediums.pop(0), False, s[1], s[2])
+            elif bases:
+                s = slot_map["zone_mid_bridge"]
+                assigned["zone_mid_bridge"] = (bases.pop(0), False, s[1], s[2])
+
+            # Левый передний план
+            if smalls:
+                s = slot_map["zone_left_front"]
+                assigned["zone_left_front"] = (smalls.pop(0), False, s[1], s[2])
+            elif mediums:
+                s = slot_map["zone_left_front"]
+                assigned["zone_left_front"] = (mediums.pop(0), False, s[1], s[2])
+
+        else:
+            # clustered и under_headline: классическая 3-зонная модель Figma
+
+            # Зона 1: Базовое плато на левом фланге (книга/папка) + предметы на поверхности
+            if bases:
+                s = slot_map["zone1_base"]
+                assigned["zone1_base"] = (bases.pop(0), False, s[1], s[2])
+                surf_cand = [m for m in mediums if m["object_id"] == "phone"]
+                if surf_cand:
+                    mediums.remove(surf_cand[0])
+                    s1 = slot_map["zone1_surface_1"]
+                    assigned["zone1_surface_1"] = (surf_cand[0], True, s1[1], s1[2])
+                elif smalls:
+                    s1 = slot_map["zone1_surface_1"]
+                    assigned["zone1_surface_1"] = (smalls.pop(0), True, s1[1], s1[2])
+                if smalls:
+                    s2 = slot_map["zone1_surface_2"]
+                    assigned["zone1_surface_2"] = (smalls.pop(0), True, s2[1], s2[2])
+            elif mediums:
+                s = slot_map["zone1_base"]
+                assigned["zone1_base"] = (mediums.pop(0), False, s[1], s[2])
+                if smalls:
+                    s1 = slot_map["zone1_surface_1"]
+                    assigned["zone1_surface_1"] = (smalls.pop(0), True, s1[1], s1[2])
+
+            # Зона 3: Правый контрбаланс заднего плана (лампа/ваза)
+            if talls:
+                s = slot_map["zone3_tall"]
+                assigned["zone3_tall"] = (talls.pop(0), False, s[1], s[2])
+
+            # Зона 2: Центральный связующий мост (наушники/кошелек)
+            if mediums:
+                s = slot_map["zone2_bridge"]
+                assigned["zone2_bridge"] = (mediums.pop(0), False, s[1], s[2])
+            elif bases:
+                s = slot_map["zone2_bridge"]
+                assigned["zone2_bridge"] = (bases.pop(0), False, s[1], s[2])
+
+            # Зона 3 (передний план): малый или средний аксессуар (ручка/монета)
+            if smalls:
+                s = slot_map["zone3_front"]
+                assigned["zone3_front"] = (smalls.pop(0), False, s[1], s[2])
+            elif mediums:
+                s = slot_map["zone3_front"]
+                assigned["zone3_front"] = (mediums.pop(0), False, s[1], s[2])
+
+        # Распределение оставшихся объектов по резервным слотам
+        remaining = bases + talls + mediums + smalls
+        for sname, rx, ry, surf in slots:
+            if sname not in assigned and remaining:
+                assigned[sname] = (remaining.pop(0), surf, rx, ry)
+
+        return assigned, layout_data["bg"]
+
+    def _layout_by_slots(
+        self,
+        main_objs: List[Dict[str, Any]],
+        bg_objs: List[Dict[str, Any]],
+        cw: float,
+        ch: float,
+        size: str,
+        layout_type: str,
+    ) -> List[Dict[str, Any]]:
+        """Размещение объектов по 3-зонным слотам изометрической композиции Figma."""
+        canvas_format = getattr(self, "_current_format", "1200x630")
+        assigned_main, bg_slots = self._allocate_slots(main_objs, layout_type, canvas_format)
+        placed: List[Dict[str, Any]] = []
+
+        for sname, (obj, on_surface, rx, ry) in assigned_main.items():
+            scale = self._get_scale(obj["object_id"], size, canvas_format)
+            w = obj.get("width", 400) * scale
+            h = obj.get("height", 400) * scale
+            gx = rx * cw
+            gy = ry * ch
+            pos_x = round(gx - (w / 2.0), 1)
+            pos_y = round(gy - h, 1)
+
+            placed.append({
+                "id": str(uuid.uuid4())[:8],
+                "object_id": obj["object_id"],
+                "name_ru": obj.get("name_ru", obj["object_id"]),
+                "size": size,
+                "state": "main",
+                "x": pos_x,
+                "y": pos_y,
+                "scale": scale,
+                "rotation": 0.0,
+                "on_surface": on_surface,
+                "width": round(w, 1),
+                "height": round(h, 1),
+            })
+
+        for i, bg in enumerate(bg_objs):
+            pos = bg_slots[i % len(bg_slots)]
+            scale = self._get_scale(bg["object_id"], size, canvas_format)
+            w = bg.get("width", 400) * scale
+            h = bg.get("height", 400) * scale
+            gx = pos[0] * cw
+            gy = pos[1] * ch
+            pos_x = round(gx - (w / 2.0), 1)
+            pos_y = round(gy - h, 1)
+
+            placed.append({
+                "id": str(uuid.uuid4())[:8],
+                "object_id": bg["object_id"],
+                "name_ru": bg.get("name_ru", bg["object_id"]),
+                "size": size,
+                "state": "bg",
+                "x": pos_x,
+                "y": pos_y,
+                "scale": scale,
+                "rotation": 0.0,
+                "on_surface": False,
+                "width": round(w, 1),
+                "height": round(h, 1),
+            })
+
+        return placed
+
     def _layout_clustered(
         self,
         main_objs: List[Dict[str, Any]],
@@ -164,243 +484,17 @@ class LayoutEngine:
         table_cx: Optional[float] = None,
         table_cy: Optional[float] = None,
     ) -> List[Dict[str, Any]]:
-        """Центральный изометрический остров со слотовой иерархией."""
-        result = []
-
-        # Центр стола на холсте
-        if table_cx is None:
-            table_cx = cw * 0.50
-        if table_cy is None:
-            table_cy = ch * 0.76
-
-        # Изометрические коэффициенты смещения (угол 30 градусов)
-        cos30 = 0.866
-        sin30 = 0.500
-
-        # Разделяем главные объекты по типам: база, вертикали, средние, малые
-        hero_obj = None
-        tall_objs = []
-        medium_objs = []
-        small_objs = []
-
-        for obj in main_objs:
-            obj_type = self.OBJECT_TYPES.get(obj["object_id"], "medium")
-            if obj_type == "base" and not hero_obj:
-                hero_obj = obj
-            elif obj_type == "tall":
-                tall_objs.append(obj)
-            elif obj_type == "small":
-                small_objs.append(obj)
-            else:
-                medium_objs.append(obj)
-
-        # Если нет базового плато, берем первый крупный объект как Hero
-        if not hero_obj:
-            if medium_objs:
-                hero_obj = medium_objs.pop(0)
-            elif tall_objs:
-                hero_obj = tall_objs.pop(0)
-            elif small_objs:
-                hero_obj = small_objs.pop(0)
-
-        # Расчет безопасных динамических отступов от габаритов центрального Hero
-        hero_scale = self._get_scale(hero_obj["object_id"], size) if hero_obj else 0.45
-        hero_w = (hero_obj.get("width", 500) if hero_obj else 500) * hero_scale
-        hero_h = (hero_obj.get("height", 500) if hero_obj else 500) * hero_scale
-        hero_hw = hero_w / 2.0
-        hero_hh = hero_h / 2.0
-
-        def get_slot_coords(obj: Dict[str, Any], slot_name: str, state: str) -> Tuple[float, float]:
-            scale = self._get_scale(obj["object_id"], size)
-            if state == "bg":
-                scale *= 0.88
-            w = obj.get("width", 400) * scale
-            h = obj.get("height", 400) * scale
-            hw = w / 2.0
-            hh = h / 2.0
-
-            if slot_name == "hero":
-                return (table_cx, table_cy)
-
-            # Плотная изометрическая группировка (cohesive cluster):
-            # Объекты компонуются вокруг базового плато в единый гармоничный натюрморт
-            if slot_name == "mid_left":
-                dx = (hero_hw * 0.65) + (hw * 0.45)
-                dy = (hero_hh * 0.15) + (hh * 0.15)
-                return (table_cx - dx, table_cy + dy)
-
-            elif slot_name == "mid_right":
-                dx = (hero_hw * 0.70) + (hw * 0.50)
-                dy = (hero_hh * 0.10)
-                return (table_cx + dx, table_cy - dy)
-
-            elif slot_name == "back_left":
-                dx = (hero_hw * 0.50) + (hw * 0.40)
-                dy = (hero_hh * 0.55) + (hh * 0.35)
-                return (table_cx - dx * cos30, table_cy - dy)
-
-            elif slot_name == "back_right":
-                dx = (hero_hw * 0.50) + (hw * 0.40)
-                dy = (hero_hh * 0.55) + (hh * 0.35)
-                return (table_cx + dx * cos30, table_cy - dy)
-
-            elif slot_name == "front_left":
-                dx = (hero_hw * 0.40) + (hw * 0.30)
-                dy = (hero_hh * 0.25) + (hh * 0.25)
-                return (table_cx - dx, table_cy + dy)
-
-            elif slot_name == "front_right":
-                dx = (hero_hw * 0.40) + (hw * 0.30)
-                dy = (hero_hh * 0.25) + (hh * 0.25)
-                return (table_cx + dx, table_cy + dy)
-
-            return (table_cx, table_cy)
-
-        occupied_slots = []
-
-        def place_at_slot(obj: Dict[str, Any], slot_name: str, state: str):
-            gx, gy = get_slot_coords(obj, slot_name, state)
-            scale = self._get_scale(obj["object_id"], size)
-            w = obj.get("width", 400) * scale
-            h = obj.get("height", 400) * scale
-
-            # Выравнивание: X по центру, Y по подошве к ground_y
-            pos_x = round(gx - (w / 2), 1)
-            pos_y = round(gy - h, 1)
-
-            rotation = 0.0
-            on_surface = False
-            if obj["object_id"] in ("pen", "coin"):
-                on_surface = True
-
-            result.append({
-                "id": str(uuid.uuid4())[:8],
-                "object_id": obj["object_id"],
-                "name_ru": obj.get("name_ru", obj["object_id"]),
-                "size": size,
-                "state": state,
-                "x": pos_x,
-                "y": pos_y,
-                "scale": scale,
-                "rotation": rotation,
-                "on_surface": on_surface,
-                "width": round(w, 1),
-                "height": round(h, 1),
-            })
-            occupied_slots.append(slot_name)
-
-        # 1. Ставим Hero в центр основания
-        if hero_obj:
-            place_at_slot(hero_obj, "hero", "main")
-
-        # 2. Высокие вертикальные акценты (Лампа, Ваза) ставим СЗАДИ базы
-        back_slot_names = ["back_left", "back_right"]
-        for tall in tall_objs:
-            for sname in back_slot_names:
-                if sname not in occupied_slots:
-                    place_at_slot(tall, sname, "main")
-                    break
-
-        # 3. Средние объекты (Телефон, Наушники, Кошелек) ставим по флангам и передней диагонали
-        side_slot_names = ["mid_left", "front_right", "mid_right", "front_left", "back_right"]
-        for med in medium_objs:
-            for sname in side_slot_names:
-                if sname not in occupied_slots:
-                    place_at_slot(med, sname, "main")
-                    break
-
-        # 4. Малые объекты (Ручка, Монета, Пазл) ставим на передний план или фланги
-        front_slot_names = ["front_left", "front_right", "mid_left", "mid_right"]
-        for sm in small_objs:
-            for sname in front_slot_names:
-                if sname not in occupied_slots:
-                    place_at_slot(sm, sname, "main")
-                    break
-
-        # 5. Фоновые монохромные силуэты компактно обрамляют композицию сзади
-        bg_dx = hero_hw * 0.55 + 25.0
-        bg_dy = hero_hh * 0.60 + 20.0
-        bg_slots = [
-            (table_cx - bg_dx * cos30, table_cy - bg_dy - 15),
-            (table_cx + bg_dx * cos30, table_cy - bg_dy - 10),
-            (table_cx, table_cy - bg_dy - 30),
-            (table_cx - bg_dx - 25, table_cy - 10),
-            (table_cx + bg_dx + 25, table_cy - 10),
-        ]
-        for i, bg in enumerate(bg_objs):
-            pos = bg_slots[i % len(bg_slots)]
-            scale = self._get_scale(bg["object_id"], size)
-            w = bg.get("width", 400) * scale
-            h = bg.get("height", 400) * scale
-            result.append({
-                "id": str(uuid.uuid4())[:8],
-                "object_id": bg["object_id"],
-                "name_ru": bg.get("name_ru", bg["object_id"]),
-                "size": size,
-                "state": "bg",
-                "x": round(pos[0] - (w / 2), 1),
-                "y": round(pos[1] - h, 1),
-                "scale": scale,
-                "rotation": 0.0,
-                "width": round(w, 1),
-                "height": round(h, 1),
-            })
-
-        return result
+        """Центральный изометрический остров со слотовой иерархией Figma."""
+        return self._layout_by_slots(main_objs, bg_objs, cw, ch, size, "clustered")
 
     def _layout_under_headline(
         self, main_objs: List[Dict[str, Any]], bg_objs: List[Dict[str, Any]], cw: float, ch: float, size: str
     ) -> List[Dict[str, Any]]:
-        """Правая зона холста со слотовой изометрической иерархией, свободная зона слева под заголовок."""
-        return self._layout_clustered(
-            main_objs=main_objs,
-            bg_objs=bg_objs,
-            cw=cw,
-            ch=ch,
-            size=size,
-            table_cx=cw * 0.65,
-            table_cy=ch * 0.76,
-        )
+        """Правая зона холста со слотовой изометрической иерархией Figma, свободная зона слева под заголовок."""
+        return self._layout_by_slots(main_objs, bg_objs, cw, ch, size, "under_headline")
 
     def _layout_offset(
         self, main_objs: List[Dict[str, Any]], bg_objs: List[Dict[str, Any]], cw: float, ch: float, size: str
     ) -> List[Dict[str, Any]]:
-        """Динамический изометрический каскад (лесенка) вдоль оси 30 градусов."""
-        result = []
-        all_objs = main_objs + bg_objs
-        total = len(all_objs)
-        if total == 0:
-            return result
-
-        table_cx = cw * 0.50
-        table_cy = ch * 0.58
-        span = (total - 1) / 2.0
-        step_x = min(115.0, max(70.0, 380.0 / max(1, total)))
-        step_y = step_x * 0.577
-
-        for i, obj in enumerate(all_objs):
-            is_bg = obj.get("state") == "bg"
-            idx_offset = i - span
-
-            gx = table_cx + (idx_offset * step_x) + (20.0 if is_bg else -20.0)
-            gy = table_cy + (idx_offset * step_y) + (-35.0 if is_bg else 15.0)
-
-            scale = self._get_scale(obj["object_id"], size)
-            w = obj.get("width", 400) * scale
-            h = obj.get("height", 400) * scale
-
-            result.append({
-                "id": str(uuid.uuid4())[:8],
-                "object_id": obj["object_id"],
-                "name_ru": obj.get("name_ru", obj["object_id"]),
-                "size": size,
-                "state": obj["state"],
-                "x": round(gx - (w / 2), 1),
-                "y": round(gy - h, 1),
-                "scale": scale,
-                "rotation": 0.0,
-                "width": round(w, 1),
-                "height": round(h, 1),
-            })
-
-        return result
+        """Динамический изометрический каскад (контрбаланс) по канону Figma."""
+        return self._layout_by_slots(main_objs, bg_objs, cw, ch, size, "offset")
