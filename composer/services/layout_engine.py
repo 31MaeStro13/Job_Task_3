@@ -111,7 +111,7 @@ class LayoutEngine:
         for idx, item in enumerate(placed):
             item["z_index"] = (idx + 1) * 100
 
-        # 4. Математическое авто-центрирование всей сцены по холсту
+        # 4. Проверка масштабирования под холст и математическое авто-центрирование
         if placed:
             min_x = min(item["x"] for item in placed)
             max_x = max(item["x"] + item["width"] for item in placed)
@@ -120,6 +120,29 @@ class LayoutEngine:
 
             scene_w = max_x - min_x
             scene_h = max_y - min_y
+
+            max_allowed_w = cw - 80.0
+            max_allowed_h = ch - 80.0
+
+            if scene_w > max_allowed_w or scene_h > max_allowed_h:
+                fit_scale = min(max_allowed_w / max(1.0, scene_w), max_allowed_h / max(1.0, scene_h))
+                fit_scale = max(0.60, min(1.0, fit_scale))
+                center_x = min_x + scene_w / 2.0
+                center_y = min_y + scene_h / 2.0
+
+                for item in placed:
+                    item["scale"] = round(item["scale"] * fit_scale, 3)
+                    item["width"] = round(item["width"] * fit_scale, 1)
+                    item["height"] = round(item["height"] * fit_scale, 1)
+                    item["x"] = round(center_x + (item["x"] - center_x) * fit_scale, 1)
+                    item["y"] = round(center_y + (item["y"] - center_y) * fit_scale, 1)
+
+                min_x = min(item["x"] for item in placed)
+                max_x = max(item["x"] + item["width"] for item in placed)
+                min_y = min(item["y"] for item in placed)
+                max_y = max(item["y"] + item["height"] for item in placed)
+                scene_w = max_x - min_x
+                scene_h = max_y - min_y
 
             if layout_type == "under_headline":
                 # Композиция центрируется в правой зоне холста (65%)
@@ -202,31 +225,67 @@ class LayoutEngine:
         hero_hw = hero_w / 2.0
         hero_hh = hero_h / 2.0
 
-        # Гарантия, что объекты на флангах и сзади не врезаются в тело Hero
-        dx_flank = max(320.0, hero_hw + 75.0)
-        dy_flank = 15.0
+        def get_slot_coords(obj: Dict[str, Any], slot_name: str, state: str) -> Tuple[float, float]:
+            scale = self._get_scale(obj["object_id"], size)
+            if state == "bg":
+                scale *= 0.88
+            w = obj.get("width", 400) * scale
+            h = obj.get("height", 400) * scale
+            hw = w / 2.0
+            hh = h / 2.0
 
-        dx_back = max(240.0, hero_hw * 0.70 + 65.0)
-        dy_back = max(130.0, hero_hh * 0.60 + 50.0)
+            if slot_name == "hero":
+                return (table_cx, table_cy)
 
-        dx_front = max(230.0, hero_hw * 0.70 + 40.0)
-        dy_front = max(80.0, hero_hh * 0.45 + 30.0)
+            # Безопасный зазор для исключения наложения теней (shadow clipping)
+            clearance = 55.0
 
-        # Слоты изометрического стола
-        slots: Dict[str, Tuple[float, float]] = {
-            "hero": (table_cx, table_cy),
-            "back_left": (table_cx - dx_back * cos30, table_cy - dy_back),
-            "back_right": (table_cx + dx_back * cos30, table_cy - dy_back + 10),
-            "front_left": (table_cx - dx_front, table_cy + dy_front),
-            "front_right": (table_cx + dx_front, table_cy + dy_front),
-            "mid_left": (table_cx - dx_flank, table_cy - dy_flank),
-            "mid_right": (table_cx + dx_flank, table_cy - dy_flank + 10),
-        }
+            if slot_name == "mid_left":
+                dx = hero_hw + hw + clearance
+                dy = 20.0
+                return (table_cx - dx, table_cy - dy)
+
+            elif slot_name == "mid_right":
+                dx = hero_hw + hw + clearance
+                dy = 15.0
+                return (table_cx + dx, table_cy - dy)
+
+            elif slot_name == "back_left":
+                dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
+                dy = (hero_hh * 0.70) + (hh * 0.40) + 40.0
+                return (table_cx - dx * cos30, table_cy - dy)
+
+            elif slot_name == "back_right":
+                dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
+                dy = (hero_hh * 0.70) + (hh * 0.40) + 35.0
+                return (table_cx + dx * cos30, table_cy - dy + 10)
+
+            elif slot_name == "front_left":
+                if obj["object_id"] == "pen":
+                    dx = hero_hw * 0.65 + 30.0
+                    dy = hero_hh * 0.40 + 30.0
+                    return (table_cx - dx, table_cy + dy)
+                else:
+                    dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
+                    dy = (hero_hh * 0.50) + (hh * 0.50) + 40.0
+                    return (table_cx - dx * cos30, table_cy + dy * sin30)
+
+            elif slot_name == "front_right":
+                if obj["object_id"] == "pen":
+                    dx = hero_hw * 0.65 + 30.0
+                    dy = hero_hh * 0.40 + 30.0
+                    return (table_cx + dx, table_cy + dy)
+                else:
+                    dx = (hero_hw * 0.75) + (hw * 0.85) + clearance
+                    dy = (hero_hh * 0.50) + (hh * 0.50) + 40.0
+                    return (table_cx + dx * cos30, table_cy + dy * sin30)
+
+            return (table_cx, table_cy)
 
         occupied_slots = []
 
         def place_at_slot(obj: Dict[str, Any], slot_name: str, state: str):
-            gx, gy = slots[slot_name]
+            gx, gy = get_slot_coords(obj, slot_name, state)
             scale = self._get_scale(obj["object_id"], size)
             if state == "bg":
                 scale *= 0.88
@@ -272,8 +331,8 @@ class LayoutEngine:
                     place_at_slot(tall, sname, "main")
                     break
 
-        # 3. Средние объекты (Телефон, Наушники, Кошелек) ставим по флангам
-        side_slot_names = ["mid_left", "mid_right", "front_left", "front_right", "back_right"]
+        # 3. Средние объекты (Телефон, Наушники, Кошелек) ставим по флангам и передней диагонали
+        side_slot_names = ["mid_left", "front_right", "mid_right", "front_left", "back_right"]
         for med in medium_objs:
             for sname in side_slot_names:
                 if sname not in occupied_slots:
@@ -281,7 +340,7 @@ class LayoutEngine:
                     break
 
         # 4. Малые объекты (Ручка, Монета, Пазл) ставим на передний план или фланги
-        front_slot_names = ["front_left", "mid_left", "front_right", "mid_right"]
+        front_slot_names = ["front_left", "front_right", "mid_left", "mid_right"]
         for sm in small_objs:
             for sname in front_slot_names:
                 if sname not in occupied_slots:
@@ -289,12 +348,14 @@ class LayoutEngine:
                     break
 
         # 5. Фоновые монохромные силуэты формируют глубину сзади
+        bg_dx = hero_hw + 160.0
+        bg_dy = hero_hh + 80.0
         bg_slots = [
-            (table_cx - (dx_back + 90) * cos30, table_cy - dy_back - 50),
-            (table_cx + (dx_back + 90) * cos30, table_cy - dy_back - 40),
-            (table_cx, table_cy - dy_back - 90),
-            (table_cx - (dx_flank + 80), table_cy - 40),
-            (table_cx + (dx_flank + 80), table_cy - 30),
+            (table_cx - bg_dx * cos30, table_cy - bg_dy - 50),
+            (table_cx + bg_dx * cos30, table_cy - bg_dy - 40),
+            (table_cx, table_cy - bg_dy - 90),
+            (table_cx - bg_dx - 60, table_cy - 40),
+            (table_cx + bg_dx + 60, table_cy - 30),
         ]
         for i, bg in enumerate(bg_objs):
             pos = bg_slots[i % len(bg_slots)]
