@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Illustration Composer · Конструктор Векторных Композиций</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-badge">SVG</div>
+        <div>
+          <h1 class="brand-title">Illustration Composer</h1>
+          <p class="brand-subtitle">Векторный конструктор изометрических иллюстраций</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <!-- Canvas Format -->
+        <div class="control-group">
+          <label for="formatSelect">Формат</label>
+          <select id="formatSelect" class="select-input">
+            <option value="1200x630" selected>1200 × 630 (Горизонтальный)</option>
+            <option value="1000x1000">1000 × 1000 (Квадрат)</option>
+            <option value="800x1200">800 × 1200 (Вертикальный)</option>
+          </select>
+        </div>
+
+        <!-- Detail Size -->
+        <div class="control-group">
+          <label>Детализация</label>
+          <div class="segmented-control">
+            <button class="seg-btn active" data-size="l">L (Высокая)</button>
+            <button class="seg-btn" data-size="s">S (Упрощенная)</button>
+          </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="control-group">
+          <label for="paletteSelect">Палитра</label>
+          <div class="palette-swatches">
+            <button class="swatch-btn active" data-palette="purple" title="Фиолетовая">
+              <span class="swatch-color" style="background: #D7CDF5;"></span>
+              <span class="swatch-color" style="background: #7864D7;"></span>
+              <span class="swatch-color" style="background: #F9A3AA;"></span>
+            </button>
+            <button class="swatch-btn" data-palette="peach" title="Персиковая">
+              <span class="swatch-color" style="background: #FDD7B9;"></span>
+              <span class="swatch-color" style="background: #D27532;"></span>
+              <span class="swatch-color" style="background: #80DADA;"></span>
+            </button>
+            <button class="swatch-btn" data-palette="mint" title="Мятная">
+              <span class="swatch-color" style="background: #BEEBEB;"></span>
+              <span class="swatch-color" style="background: #5ABEBE;"></span>
+              <span class="swatch-color" style="background: #6D7BFC;"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="header-actions">
+          <button id="exportSvgBtn" class="btn btn-primary" title="Экспорт в SVG">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Скачать SVG
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Sidebar Control Panels -->
+      <aside class="sidebar">
+        <!-- Tab Navigation -->
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="tab-scenario1">
+            <span>✨ Сценарий 1</span>
+            <small>По смыслу / ИИ</small>
+          </button>
+          <button class="tab-btn" data-tab="tab-scenario2">
+            <span>🧩 Сценарий 2</span>
+            <small>По компонентам</small>
+          </button>
+        </div>
+
+        <!-- Tab 1: Scenario 1 (Metaphor / AI Agent) -->
+        <div id="tab-scenario1" class="tab-content active">
+          <div class="panel-section">
+            <label class="section-title">Метафора или заголовок</label>
+            <textarea id="metaphorInput" class="text-input" rows="3" placeholder="Например: 'Управление личными финансами и инвестиции' или 'Эффективное удаленное обучение'"></textarea>
+            
+            <div class="chips-container">
+              <span class="chip-label">Быстрые примеры:</span>
+              <button class="chip" data-text="Дистанционное онлайн-образование и курсы">🎓 Обучение</button>
+              <button class="chip" data-text="Управление личными финансами и накопления">💰 Финансы</button>
+              <button class="chip" data-text="Командная работа и решение сложных задач">🧩 Логика & Команда</button>
+              <button class="chip" data-text="Уютный вечер за чтением книги">☕ Уют & Чтение</button>
+              <button class="chip" data-text="Мобильные технологии и онлайн сервисы">📱 IT & Сервисы</button>
+            </div>
+
+            <div class="form-check">
+              <input type="checkbox" id="useBgObjectsCheck" checked>
+              <label for="useBgObjectsCheck">Добавлять фоновые силуэты (монохром)</label>
+            </div>
+
+            <button id="runMetaphorBtn" class="btn btn-accent btn-block">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              Собрать композицию через ИИ
+            </button>
+          </div>
+
+          <!-- AI Reasoning Box -->
+          <div id="aiReasoningBox" class="ai-card hidden">
+            <div class="ai-card-header">
+              <span class="ai-badge">Семантика ИИ</span>
+              <span id="aiLayoutBadge" class="layout-tag">Собранно</span>
+            </div>
+            <p id="aiReasoningText" class="ai-text"></p>
+            <div id="aiSelectedTags" class="ai-tags"></div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Scenario 2 (Manual Component Picker) -->
+        <div id="tab-scenario2" class="tab-content">
+          <div class="panel-section">
+            <label class="section-title">Схема расположения</label>
+            <div class="layout-picker">
+              <label class="layout-option">
+                <input type="radio" name="layoutOption" value="clustered" checked>
+                <div class="layout-card">
+                  <div class="layout-icon">●</div>
+                  <span>Собранно</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="layoutOption" value="under_headline">
+                <div class="layout-card">
+                  <div class="layout-icon">◨</div>
+                  <span>Под заголовок</span>
+                </div>
+              </label>
+              <label class="layout-option">
+                <input type="radio" name="layoutOption" value="offset">
+                <div class="layout-card">
+                  <div class="layout-icon">◪</div>
+                  <span>Со смещением</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <div class="section-header-flex">
+              <label class="section-title">Библиотека компонентов (10)</label>
+              <span id="selectedCountBadge" class="count-badge">0 выбрано</span>
+            </div>
+            <p class="section-desc">Кликните по объекту для выбора, настройте роль (Главный/Фоновый):</p>
+            
+            <div id="componentsCatalog" class="catalog-grid">
+              <!-- Dynamically populated via JS from API -->
+            </div>
+
+            <button id="runManualBtn" class="btn btn-accent btn-block" style="margin-top: 14px;">
+              Собрать выбранные объекты
+            </button>
+          </div>
+        </div>
+
+        <!-- Object Inspector (when an object is clicked on the canvas) -->
+        <div id="inspectorPanel" class="inspector-panel hidden">
+          <div class="inspector-header">
+            <h3 id="inspectorTitle">Объект</h3>
+            <button id="closeInspectorBtn" class="close-btn">&times;</button>
+          </div>
+          <div class="inspector-body">
+            <div class="inspector-row">
+              <label>Масштаб:</label>
+              <input type="range" id="scaleRange" min="0.2" max="1.5" step="0.05" value="1.0">
+              <span id="scaleValue">1.0x</span>
+            </div>
+            <div class="inspector-row">
+              <label>Поворот:</label>
+              <input type="range" id="rotateRange" min="-180" max="180" step="5" value="0">
+              <span id="rotateValue">0°</span>
+            </div>
+            <div class="inspector-actions">
+              <button id="bringForwardBtn" class="btn btn-sm btn-outline" title="На слой выше">▲ Вперед</button>
+              <button id="sendBackwardBtn" class="btn btn-sm btn-outline" title="На слой ниже">▼ Назад</button>
+              <button id="duplicateBtn" class="btn btn-sm btn-outline" title="Дублировать">Копия</button>
+              <button id="deleteBtn" class="btn btn-sm btn-danger" title="Удалить">Удалить</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Canvas Stage -->
+      <main class="canvas-stage">
+        <div class="stage-toolbar">
+          <div class="zoom-controls">
+            <button id="zoomOutBtn" class="tool-btn">-</button>
+            <span id="zoomLevelText">100%</span>
+            <button id="zoomInBtn" class="tool-btn">+</button>
+            <button id="zoomFitBtn" class="tool-btn">Вписать</button>
+          </div>
+          <div class="stage-info">
+            <span id="statusInfoText">Готов к работе</span>
+          </div>
+        </div>
+
+        <div class="canvas-scroll-container" id="canvasContainer">
+          <div id="canvasViewport" class="canvas-viewport">
+            <div id="svgMountPoint" class="svg-mount-point">
+              <!-- Rendered SVG goes here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Reference Examples -->
+        <div class="reference-bar">
+          <span class="ref-title">Готовые эталоны из Figma:</span>
+          <button class="ref-btn" data-preset="edu">📚 Образование & Лекции</button>
+          <button class="ref-btn" data-preset="fin">💼 Финансы & Инвестиции</button>
+          <button class="ref-btn" data-preset="team">🧩 Командное решение</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

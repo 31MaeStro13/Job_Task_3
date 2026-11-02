@@ -1,0 +1,582 @@
+{
+  "objects": {
+    "book": {
+      "id": "book",
+      "name_ru": "Книга",
+      "name_en": "Open Book",
+      "category": "education",
+      "keywords": [
+        "книга",
+        "чтение",
+        "учеба",
+        "образование",
+        "знание",
+        "библиотека",
+        "курс",
+        "лекция",
+        "теория",
+        "статья",
+        "документация",
+        "история",
+        "обучение"
+      ],
+      "default_role": "main",
+      "weight": 1.0,
+      "variants": {
+        "l_main": {
+          "filename": "book_l_main.svg",
+          "width": 1446.0,
+          "height": 977.0,
+          "viewBox": "0 0 1446 977",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "book_l_bg.svg",
+          "width": 1446.0,
+          "height": 977.0,
+          "viewBox": "0 0 1446 977",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "book_s_main.svg",
+          "width": 723.0,
+          "height": 489.0,
+          "viewBox": "0 0 723 489",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "book_s_bg.svg",
+          "width": 723.0,
+          "height": 489.0,
+          "viewBox": "0 0 723 489",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "phone": {
+      "id": "phone",
+      "name_ru": "Телефон",
+      "name_en": "Smartphone",
+      "category": "tech",
+      "keywords": [
+        "телефон",
+        "смартфон",
+        "мобильный",
+        "приложение",
+        "экран",
+        "сообщение",
+        "чат",
+        "связь",
+        "онлайн",
+        "сервис",
+        "технологии",
+        "it",
+        "разработка"
+      ],
+      "default_role": "main",
+      "weight": 0.9,
+      "variants": {
+        "l_main": {
+          "filename": "phone_l_main.svg",
+          "width": 797.0,
+          "height": 462.0,
+          "viewBox": "0 0 797 462",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "phone_l_bg.svg",
+          "width": 797.0,
+          "height": 462.0,
+          "viewBox": "0 0 797 462",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "phone_s_main.svg",
+          "width": 399.0,
+          "height": 231.0,
+          "viewBox": "0 0 399 231",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "phone_s_bg.svg",
+          "width": 399.0,
+          "height": 231.0,
+          "viewBox": "0 0 399 231",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "headphones": {
+      "id": "headphones",
+      "name_ru": "Наушники",
+      "name_en": "Headphones",
+      "category": "media",
+      "keywords": [
+        "наушники",
+        "музыка",
+        "звук",
+        "аудио",
+        "подкаст",
+        "созвон",
+        "встреча",
+        "фокус",
+        "концентрация",
+        "вебинар",
+        "митинг",
+        "голос"
+      ],
+      "default_role": "main",
+      "weight": 0.85,
+      "variants": {
+        "l_main": {
+          "filename": "headphones_l_main.svg",
+          "width": 889.0,
+          "height": 692.0,
+          "viewBox": "0 0 889 692",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "headphones_l_bg.svg",
+          "width": 889.0,
+          "height": 692.0,
+          "viewBox": "0 0 889 692",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "headphones_s_main.svg",
+          "width": 445.0,
+          "height": 346.0,
+          "viewBox": "0 0 445 346",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "headphones_s_bg.svg",
+          "width": 445.0,
+          "height": 346.0,
+          "viewBox": "0 0 445 346",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "lamp": {
+      "id": "lamp",
+      "name_ru": "Лампа",
+      "name_en": "Desk Lamp",
+      "category": "workplace",
+      "keywords": [
+        "лампа",
+        "свет",
+        "идея",
+        "инсайт",
+        "рабочее место",
+        "освещение",
+        "офис",
+        "проектирование",
+        "ночь",
+        "дизайн",
+        "творчество",
+        "вдохновение"
+      ],
+      "default_role": "main",
+      "weight": 0.9,
+      "variants": {
+        "l_main": {
+          "filename": "lamp_l_main.svg",
+          "width": 946.0,
+          "height": 1129.0,
+          "viewBox": "0 0 946 1129",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "lamp_l_bg.svg",
+          "width": 946.0,
+          "height": 1129.0,
+          "viewBox": "0 0 946 1129",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "lamp_s_main.svg",
+          "width": 473.0,
+          "height": 565.0,
+          "viewBox": "0 0 473 565",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "lamp_s_bg.svg",
+          "width": 473.0,
+          "height": 565.0,
+          "viewBox": "0 0 473 565",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "wallet": {
+      "id": "wallet",
+      "name_ru": "Кошелек",
+      "name_en": "Wallet",
+      "category": "finance",
+      "keywords": [
+        "кошелек",
+        "деньги",
+        "финансы",
+        "бюджет",
+        "оплата",
+        "зарплата",
+        "покупки",
+        "сбережения",
+        "банк",
+        "карта",
+        "расходы",
+        "экономия"
+      ],
+      "default_role": "main",
+      "weight": 0.8,
+      "variants": {
+        "l_main": {
+          "filename": "wallet_l_main.svg",
+          "width": 631.0,
+          "height": 397.0,
+          "viewBox": "0 0 631 397",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "wallet_l_bg.svg",
+          "width": 631.0,
+          "height": 397.0,
+          "viewBox": "0 0 631 397",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "wallet_s_main.svg",
+          "width": 316.0,
+          "height": 199.0,
+          "viewBox": "0 0 316 199",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "wallet_s_bg.svg",
+          "width": 316.0,
+          "height": 199.0,
+          "viewBox": "0 0 316 199",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "puzzle": {
+      "id": "puzzle",
+      "name_ru": "Пазлы",
+      "name_en": "Puzzle Pieces",
+      "category": "logic",
+      "keywords": [
+        "пазл",
+        "пазлы",
+        "логика",
+        "решение",
+        "задача",
+        "детали",
+        "команда",
+        "коллаборация",
+        "структура",
+        "интеграция",
+        "системность",
+        "архитектура"
+      ],
+      "default_role": "accent",
+      "weight": 0.8,
+      "variants": {
+        "l_main": {
+          "filename": "puzzle_l_main.svg",
+          "width": 545.0,
+          "height": 314.0,
+          "viewBox": "0 0 545 314",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "puzzle_l_bg.svg",
+          "width": 545.0,
+          "height": 314.0,
+          "viewBox": "0 0 545 314",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "puzzle_s_main.svg",
+          "width": 273.0,
+          "height": 157.0,
+          "viewBox": "0 0 273 157",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "puzzle_s_bg.svg",
+          "width": 273.0,
+          "height": 157.0,
+          "viewBox": "0 0 273 157",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "coin": {
+      "id": "coin",
+      "name_ru": "Монета",
+      "name_en": "Coin / Tag",
+      "category": "finance",
+      "keywords": [
+        "монета",
+        "деньги",
+        "инвестиции",
+        "прибыль",
+        "кэшбэк",
+        "бонус",
+        "скидка",
+        "валюта",
+        "крипта",
+        "транзакция",
+        "цена",
+        "стоимость"
+      ],
+      "default_role": "accent",
+      "weight": 0.7,
+      "variants": {
+        "l_main": {
+          "filename": "coin_l_main.svg",
+          "width": 287.0,
+          "height": 189.0,
+          "viewBox": "0 0 287 189",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "coin_l_bg.svg",
+          "width": 287.0,
+          "height": 189.0,
+          "viewBox": "0 0 287 189",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "coin_s_main.svg",
+          "width": 153.0,
+          "height": 101.0,
+          "viewBox": "0 0 153 101",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "coin_s_bg.svg",
+          "width": 153.0,
+          "height": 101.0,
+          "viewBox": "0 0 153 101",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "folder": {
+      "id": "folder",
+      "name_ru": "Папка / Документ",
+      "name_en": "Folder / Document",
+      "category": "business",
+      "keywords": [
+        "папка",
+        "документы",
+        "файлы",
+        "отчет",
+        "архив",
+        "договор",
+        "дело",
+        "организация",
+        "планирование",
+        "бюрократия",
+        "управление"
+      ],
+      "default_role": "support",
+      "weight": 0.75,
+      "variants": {
+        "l_main": {
+          "filename": "folder_l_main.svg",
+          "width": 1241.0,
+          "height": 659.0,
+          "viewBox": "0 0 1241 659",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "folder_l_bg.svg",
+          "width": 1241.0,
+          "height": 659.0,
+          "viewBox": "0 0 1241 659",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "folder_s_main.svg",
+          "width": 621.0,
+          "height": 330.0,
+          "viewBox": "0 0 621 330",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "folder_s_bg.svg",
+          "width": 621.0,
+          "height": 330.0,
+          "viewBox": "0 0 621 330",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "pen": {
+      "id": "pen",
+      "name_ru": "Ручка",
+      "name_en": "Pen / Pencil",
+      "category": "writing",
+      "keywords": [
+        "ручка",
+        "карандаш",
+        "письмо",
+        "подпись",
+        "заметки",
+        "чертеж",
+        "авторство",
+        "конспект",
+        "создание",
+        "текст",
+        "контракт"
+      ],
+      "default_role": "accent",
+      "weight": 0.65,
+      "variants": {
+        "l_main": {
+          "filename": "pen_l_main.svg",
+          "width": 509.0,
+          "height": 286.0,
+          "viewBox": "0 0 509 286",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "pen_l_bg.svg",
+          "width": 509.0,
+          "height": 286.0,
+          "viewBox": "0 0 509 286",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "pen_s_main.svg",
+          "width": 255.0,
+          "height": 143.0,
+          "viewBox": "0 0 255 143",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "pen_s_bg.svg",
+          "width": 255.0,
+          "height": 143.0,
+          "viewBox": "0 0 255 143",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    },
+    "vase": {
+      "id": "vase",
+      "name_ru": "Ваза с цветами",
+      "name_en": "Vase with Flowers",
+      "category": "lifestyle",
+      "keywords": [
+        "ваза",
+        "цветы",
+        "тюльпаны",
+        "уют",
+        "комфорт",
+        "эстетика",
+        "декор",
+        "красота",
+        "весна",
+        "жизнь",
+        "гармония",
+        "дом",
+        "баланс"
+      ],
+      "default_role": "support",
+      "weight": 0.8,
+      "variants": {
+        "l_main": {
+          "filename": "vase_l_main.svg",
+          "width": 591.0,
+          "height": 748.0,
+          "viewBox": "0 0 591 748",
+          "size": "l",
+          "state": "main"
+        },
+        "l_bg": {
+          "filename": "vase_l_bg.svg",
+          "width": 591.0,
+          "height": 748.0,
+          "viewBox": "0 0 591 748",
+          "size": "l",
+          "state": "bg"
+        },
+        "s_main": {
+          "filename": "vase_s_main.svg",
+          "width": 324.0,
+          "height": 409.0,
+          "viewBox": "0 0 324 409",
+          "size": "s",
+          "state": "main"
+        },
+        "s_bg": {
+          "filename": "vase_s_bg.svg",
+          "width": 324.0,
+          "height": 409.0,
+          "viewBox": "0 0 324 409",
+          "size": "s",
+          "state": "bg"
+        }
+      }
+    }
+  },
+  "formats": {
+    "1200x630": {
+      "width": 1200,
+      "height": 630,
+      "name": "Горизонтальный (1200x630)"
+    },
+    "1000x1000": {
+      "width": 1000,
+      "height": 1000,
+      "name": "Квадрат (1000x1000)"
+    },
+    "800x1200": {
+      "width": 800,
+      "height": 1200,
+      "name": "Вертикальный (800x1200)"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "purple": {
+    "id": "purple",
+    "name": "Фиолетовая (Default)",
+    "description": "Основная фиолетовая гамма с пастельно-желтыми и коралловыми акцентами",
+    "bg_light": "#D7CDF5",
+    "bg_mid": "#AA9BF0",
+    "bg_dark": "#7864D7",
+    "obj_accent_1": "#F9ECB0",
+    "obj_accent_2": "#F9A3AA",
+    "obj_accent_3": "#FFE3E1",
+    "stroke": "#181817",
+    "white": "#FFFFFF"
+  },
+  "peach": {
+    "id": "peach",
+    "name": "Персиковая / Оранжевая",
+    "description": "Теплая персиковая гамма с бирюзовыми акцентами",
+    "bg_light": "#FDD7B9",
+    "bg_mid": "#FAC896",
+    "bg_dark": "#D27532",
+    "obj_accent_1": "#F9ECB0",
+    "obj_accent_2": "#80DADA",
+    "obj_accent_3": "#BEEBEB",
+    "stroke": "#181817",
+    "white": "#FFFFFF"
+  },
+  "mint": {
+    "id": "mint",
+    "name": "Мятная / Голубая",
+    "description": "Свежая мятная гамма с лавандово-синими и розовыми акцентами",
+    "bg_light": "#BEEBEB",
+    "bg_mid": "#80DADA",
+    "bg_dark": "#5ABEBE",
+    "obj_accent_1": "#FFD4F2",
+    "obj_accent_2": "#6D7BFC",
+    "obj_accent_3": "#B6C6FE",
+    "stroke": "#181817",
+    "white": "#FFFFFF"
+  }
+}
