@@ -1,22 +1,34 @@
+import os
+import json
 import re
 from typing import Dict, List, Any, Optional
+import requests
 from .library_service import LibraryService
 
 
 class NlpMetaphorAgent:
     """ИИ-агент семантического анализа метафор и заголовков.
     
-    Отвечает строго за семантику (Сценарий 1):
-    1. Анализирует тему, контекст и эмоциональный тон метафоры.
-    2. Выбирает наиболее подходящие 3–5 объектов из векторной библиотеки.
-    3. Разделяет их на Главные (Main, цветные доминанты) и Фоновые (Bg, монохромная глубина).
-    4. Подбирает рекомендуемый композиционный архетип (under_headline, offset, clustered).
+    Поддерживает гибридный режим:
+    1. Если в окружении есть GEMINI_API_KEY или OPENAI_API_KEY — вызывает современную LLM
+       со структурированным JSON-выводом и семантическим обоснованием.
+    2. В оффлайн-режиме (или при сбое сети) — мгновенно переключается на встроенный
+       детерминированный семантический анализатор по онтологии тегов и ключевых слов.
     """
 
     def __init__(self, library_service: LibraryService):
         self.library = library_service
 
     def analyze(self, metaphor: str, use_bg_objects: bool = True) -> Dict[str, Any]:
+        # 1. Попытка вызова внешней LLM
+        llm_res = self._try_llm_analyze(metaphor, use_bg_objects)
+        if llm_res:
+            return llm_res
+
+        # 2. Детерминированный локальный эвристический анализ
+        return self._local_heuristic_analyze(metaphor, use_bg_objects)
+
+    def _local_heuristic_analyze(self, metaphor: str, use_bg_objects: bool = True) -> Dict[str, Any]:
         text_clean = metaphor.lower().strip()
         words = re.findall(r"\b[a-zA-Zа-яА-ЯёЁ0-9]{3,}\b", text_clean)
 
@@ -109,4 +121,113 @@ class NlpMetaphorAgent:
             "components": components,
             "recommended_layout": layout,
             "reasoning": f"{reason} {layout_reason}",
+        }
+
+    def _try_llm_analyze(self, metaphor: str, use_bg_objects: bool) -> Optional[Dict[str, Any]]:
+        gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        openai_key = os.environ.get("OPENAI_API_KEY")
+
+        if not gemini_key and not openai_key:
+            return None
+
+        system_prompt = (
+            "Ты — ИИ арт-директор и композитор векторных иллюстраций.\n"
+            "По заданной метафоре или заголовку выбери от 3 до 5 подходящих объектов из библиотеки "
+            "и назначь им роли: 'main' (цветной доминант переднего плана) или 'bg' (монохромный силуэт глубины).\n\n"
+            "Доступно ровно 10 объектов библиотеки (другие запрещены!):\n"
+            "- book (Книга)\n- phone (Смартфон)\n- headphones (Наушники)\n- lamp (Лампа)\n"
+            "- wallet (Кошелек)\n- puzzle (Пазлы)\n- coin (Монета)\n- folder (Папка)\n"
+            "- pen (Ручка)\n- vase (Ваза с цветами)\n\n"
+            "Схемы компоновки (layout):\n"
+            "- under_headline (если это заголовок статьи/поста, свободная зона слева)\n"
+            "- offset (динамичная диагональ)\n"
+            "- clustered (цельный изометрический остров в центре)\n\n"
+            "Верни ответ СТРОГО в JSON:\n"
+            "{\n"
+            '  "components": [{"object_id": "book", "state": "main"}, {"object_id": "lamp", "state": "bg"}],\n'
+            '  "layout": "under_headline",\n'
+            '  "reasoning": "Краткое арт-обоснование метафоры на русском (1-2 предложения)"\n'
+            "}"
+        )
+
+        if gemini_key:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                payload = {
+                    "contents": [{"parts": [{"text": f"{system_prompt}\n\nМетафора: \"{metaphor}\""}]}],
+                    "generationConfig": {"responseMimeType": "application/json"}
+                }
+                resp = requests.post(url, json=payload, timeout=6)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    parsed = json.loads(text)
+                    return self._format_llm_response(parsed, metaphor, use_bg_objects, engine="Gemini Flash AI")
+            except Exception:
+                pass
+
+        elif openai_key:
+            try:
+                url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1") + "/chat/completions"
+                payload = {
+                    "model": os.environ.get("OPENAI_MODEL", "gpt-4o-mini"),
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f'Метафора: "{metaphor}"'}
+                    ],
+                    "response_format": {"type": "json_object"}
+                }
+                resp = requests.post(url, json=payload, headers={"Authorization": f"Bearer {openai_key}"}, timeout=6)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    parsed = json.loads(data["choices"][0]["message"]["content"])
+                    return self._format_llm_response(parsed, metaphor, use_bg_objects, engine="OpenAI AI")
+            except Exception:
+                pass
+
+        return None
+
+    def _format_llm_response(
+        self,
+        parsed: Dict[str, Any],
+        metaphor: str,
+        use_bg_objects: bool,
+        engine: str = "LLM AI",
+    ) -> Optional[Dict[str, Any]]:
+        raw_comps = parsed.get("components", [])
+        valid_comps = []
+        seen = set()
+
+        for c in raw_comps:
+            oid = str(c.get("object_id", "")).lower()
+            if oid in self.library.objects and oid not in seen:
+                seen.add(oid)
+                meta = self.library.get_object_meta(oid) or {}
+                state = c.get("state", "main")
+                if not use_bg_objects:
+                    state = "main"
+                elif state not in ["main", "bg"]:
+                    state = "main"
+
+                valid_comps.append({
+                    "object_id": oid,
+                    "name_ru": meta.get("name_ru", oid),
+                    "state": state,
+                    "score": 10.0,
+                })
+
+        if len(valid_comps) < 2:
+            return None
+
+        layout = parsed.get("layout", "clustered")
+        if layout not in ["under_headline", "offset", "clustered"]:
+            layout = "clustered"
+
+        reasoning = parsed.get("reasoning", "Семантический подбор композиции.")
+
+        return {
+            "metaphor": metaphor,
+            "components": valid_comps,
+            "recommended_layout": layout,
+            "reasoning": f"[{engine}] {reasoning}",
         }
