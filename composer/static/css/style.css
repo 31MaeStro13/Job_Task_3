@@ -581,17 +581,6 @@ body {
   cursor: pointer;
 }
 
-.inspector-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.inspector-row input[type="range"] {
-  flex: 1;
-}
 
 .inspector-actions {
   display: grid;
