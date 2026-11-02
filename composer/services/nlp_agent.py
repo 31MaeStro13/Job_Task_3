@@ -152,12 +152,16 @@ class NlpMetaphorAgent:
 
         if gemini_key:
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+                url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
+                headers = {
+                    "x-goog-api-key": gemini_key,
+                    "Content-Type": "application/json",
+                }
                 payload = {
                     "contents": [{"parts": [{"text": f"{system_prompt}\n\nМетафора: \"{metaphor}\""}]}],
                     "generationConfig": {"responseMimeType": "application/json"}
                 }
-                resp = requests.post(url, json=payload, timeout=6)
+                resp = requests.post(url, json=payload, headers=headers, timeout=12)
                 if resp.status_code == 200:
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
