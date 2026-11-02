@@ -60,6 +60,9 @@
               <span class="swatch-color" style="background: #5ABEBE;"></span>
               <span class="swatch-color" style="background: #6D7BFC;"></span>
             </button>
+            <button id="addPaletteBtn" class="swatch-btn add-swatch-btn" title="Загрузить свою палитру">
+              <span class="plus-icon">+</span>
+            </button>
           </div>
         </div>
 
@@ -157,6 +160,17 @@
 
           <div class="panel-section">
             <div class="section-header-flex">
+              <label class="section-title">Ввод компонентов по названиям</label>
+            </div>
+            <div class="input-with-button">
+              <input type="text" id="componentTextInput" class="text-input" placeholder="Введите: книга, телефон, лампа, пазлы...">
+              <button id="applyComponentTextBtn" class="btn btn-sm btn-outline" type="button">Выбрать</button>
+            </div>
+            <p class="section-desc" style="margin-top: 6px;">Введите названия через запятую или кликайте по карточкам ниже.</p>
+          </div>
+
+          <div class="panel-section">
+            <div class="section-header-flex">
               <label class="section-title">Библиотека компонентов (10)</label>
               <span id="selectedCountBadge" class="count-badge">0 выбрано</span>
             </div>
@@ -229,6 +243,77 @@
           <button class="ref-btn" data-preset="team">🧩 Командное решение</button>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Modal for Custom Palette Upload/Create -->
+  <div id="paletteModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Загрузка / создание палитры</h3>
+        <button id="closePaletteModalBtn" class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-hint">
+          Соблюдается строгое правило дизайна: <strong>«Цвета для объектов не могут использоваться в фонах»</strong>.
+        </p>
+
+        <div class="modal-tabs">
+          <button class="modal-tab-btn active" data-modaltab="jsonTab">JSON из Figma</button>
+          <button class="modal-tab-btn" data-modaltab="pickerTab">Выбор цветов (HEX)</button>
+        </div>
+
+        <div id="jsonTab" class="modal-tab-pane active">
+          <textarea id="paletteJsonInput" class="text-input code-input" rows="7" placeholder='{
+  "name": "Моя Неоновая",
+  "bg_light": "#E8DFF5",
+  "bg_mid": "#C7B8EA",
+  "bg_dark": "#937DC2",
+  "obj_accent_1": "#FFE2E2",
+  "obj_accent_2": "#FFC7C7",
+  "obj_accent_3": "#FFADAD"
+}'></textarea>
+        </div>
+
+        <div id="pickerTab" class="modal-tab-pane">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label>Название палитры</label>
+              <input type="text" id="paletteNameInput" class="text-input" placeholder="Название" value="Новая палитра">
+            </div>
+            <div class="form-field">
+              <label>Фон 1 (светлый)</label>
+              <input type="color" id="bgLightColor" value="#E8DFF5">
+            </div>
+            <div class="form-field">
+              <label>Фон 2 (средний)</label>
+              <input type="color" id="bgMidColor" value="#C7B8EA">
+            </div>
+            <div class="form-field">
+              <label>Фон 3 (темный)</label>
+              <input type="color" id="bgDarkColor" value="#937DC2">
+            </div>
+            <div class="form-field">
+              <label>Объект акцент 1</label>
+              <input type="color" id="obj1Color" value="#FFE2E2">
+            </div>
+            <div class="form-field">
+              <label>Объект акцент 2</label>
+              <input type="color" id="obj2Color" value="#FFC7C7">
+            </div>
+            <div class="form-field">
+              <label>Объект акцент 3</label>
+              <input type="color" id="obj3Color" value="#FFADAD">
+            </div>
+          </div>
+        </div>
+
+        <div id="paletteErrorAlert" class="error-banner hidden"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelPaletteModalBtn" class="btn btn-outline">Отмена</button>
+        <button id="savePaletteBtn" class="btn btn-primary">Применить и перекрасить</button>
+      </div>
     </div>
   </div>
 

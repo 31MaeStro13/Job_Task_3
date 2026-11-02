@@ -11,6 +11,7 @@ from .serializers import (
     UpdateCompositionSerializer,
     RecolorSerializer,
     CompositionModelSerializer,
+    CustomPaletteSerializer,
 )
 from .services.library_service import LibraryService
 from .services.palette_service import PaletteService
@@ -72,6 +73,39 @@ class PalettesListView(APIView):
             "success": True,
             "palettes": palettes,
         })
+
+    def post(self, request):
+        """Загрузка / создание пользовательской палитры с валидацией дизайнерских правил."""
+        serializer = CustomPaletteSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"success": False, "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+        try:
+            palette_service.validate_palette_rules(data)
+        except ValueError as e:
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        palette_obj = serializer.save()
+        palette_id = f"custom_{palette_obj.id}"
+        palette_dict = {
+            "id": palette_id,
+            "name": palette_obj.name,
+            "bg_light": palette_obj.bg_light,
+            "bg_mid": palette_obj.bg_mid,
+            "bg_dark": palette_obj.bg_dark,
+            "obj_accent_1": palette_obj.obj_accent_1,
+            "obj_accent_2": palette_obj.obj_accent_2,
+            "obj_accent_3": palette_obj.obj_accent_3,
+            "stroke": palette_obj.stroke,
+            "white": palette_obj.white,
+        }
+        palette_service.palettes[palette_id] = palette_dict
+
+        return Response({
+            "success": True,
+            "palette": palette_dict,
+        }, status=status.HTTP_201_CREATED)
 
 
 class ComposeMetaphorView(APIView):

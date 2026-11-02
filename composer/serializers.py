@@ -2,6 +2,22 @@ from rest_framework import serializers
 from .models import Composition, CustomPalette
 
 
+class CustomPaletteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomPalette
+        fields = [
+            "name",
+            "bg_light",
+            "bg_mid",
+            "bg_dark",
+            "obj_accent_1",
+            "obj_accent_2",
+            "obj_accent_3",
+            "stroke",
+            "white",
+        ]
+
+
 class ComponentItemSerializer(serializers.Serializer):
     object_id = serializers.CharField()
     state = serializers.ChoiceField(choices=["main", "bg"], default="main")

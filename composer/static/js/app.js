@@ -42,6 +42,27 @@ class ComposerApp {
     this.runManualBtn = document.getElementById("runManualBtn");
     this.selectedCountBadge = document.getElementById("selectedCountBadge");
     this.layoutRadios = document.querySelectorAll('input[name="layoutOption"]');
+    this.componentTextInput = document.getElementById("componentTextInput");
+    this.applyComponentTextBtn = document.getElementById("applyComponentTextBtn");
+
+    // Palette Modal & Controls
+    this.paletteSwatchesContainer = document.querySelector(".palette-swatches");
+    this.addPaletteBtn = document.getElementById("addPaletteBtn");
+    this.paletteModal = document.getElementById("paletteModal");
+    this.closePaletteModalBtn = document.getElementById("closePaletteModalBtn");
+    this.cancelPaletteModalBtn = document.getElementById("cancelPaletteModalBtn");
+    this.savePaletteBtn = document.getElementById("savePaletteBtn");
+    this.paletteJsonInput = document.getElementById("paletteJsonInput");
+    this.paletteNameInput = document.getElementById("paletteNameInput");
+    this.bgLightColor = document.getElementById("bgLightColor");
+    this.bgMidColor = document.getElementById("bgMidColor");
+    this.bgDarkColor = document.getElementById("bgDarkColor");
+    this.obj1Color = document.getElementById("obj1Color");
+    this.obj2Color = document.getElementById("obj2Color");
+    this.obj3Color = document.getElementById("obj3Color");
+    this.paletteErrorAlert = document.getElementById("paletteErrorAlert");
+    this.modalTabBtns = document.querySelectorAll(".modal-tab-btn");
+    this.modalTabPanes = document.querySelectorAll(".modal-tab-pane");
 
     // Canvas
     this.mountPoint = document.getElementById("svgMountPoint");
@@ -116,8 +137,45 @@ class ComposerApp {
     // Metaphor Run
     this.runMetaphorBtn.addEventListener("click", () => this.runMetaphor());
 
-    // Manual Run
+    // Manual Run & Text Input
     this.runManualBtn.addEventListener("click", () => this.runManual());
+    if (this.componentTextInput) {
+      this.componentTextInput.addEventListener("input", () => this.filterCatalogLive());
+      this.componentTextInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          this.applyComponentTextInput();
+        }
+      });
+    }
+    if (this.applyComponentTextBtn) {
+      this.applyComponentTextBtn.addEventListener("click", () => this.applyComponentTextInput());
+    }
+
+    // Palette Modal
+    if (this.addPaletteBtn) {
+      this.addPaletteBtn.addEventListener("click", () => this.openPaletteModal());
+    }
+    if (this.closePaletteModalBtn) {
+      this.closePaletteModalBtn.addEventListener("click", () => this.closePaletteModal());
+    }
+    if (this.cancelPaletteModalBtn) {
+      this.cancelPaletteModalBtn.addEventListener("click", () => this.closePaletteModal());
+    }
+    if (this.savePaletteBtn) {
+      this.savePaletteBtn.addEventListener("click", () => this.saveCustomPalette());
+    }
+    if (this.modalTabBtns) {
+      this.modalTabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.modalTabBtns.forEach((b) => b.classList.remove("active"));
+          this.modalTabPanes.forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          const target = document.getElementById(btn.dataset.modaltab);
+          if (target) target.classList.add("active");
+        });
+      });
+    }
 
     // Layout Radio
     this.layoutRadios.forEach((r) => {
@@ -227,6 +285,145 @@ class ComposerApp {
   updateSelectedCount() {
     const count = this.state.manualSelection.size;
     this.selectedCountBadge.textContent = `${count} выбрано`;
+  }
+
+  filterCatalogLive() {
+    const query = this.componentTextInput.value.trim().toLowerCase();
+    const cards = this.catalogGrid.querySelectorAll(".catalog-item");
+    cards.forEach((card) => {
+      const id = card.dataset.id;
+      const comp = this.state.components.find((c) => c.id === id);
+      if (!comp) return;
+      const nameRu = (comp.name_ru || "").toLowerCase();
+      const match = !query || nameRu.includes(query) || id.toLowerCase().includes(query);
+      card.style.display = match ? "" : "none";
+    });
+  }
+
+  applyComponentTextInput() {
+    const raw = this.componentTextInput.value.trim();
+    if (!raw) return;
+
+    const tokens = raw.split(/[,;\n]+/).map((t) => t.trim().toLowerCase()).filter(Boolean);
+    if (tokens.length === 0) return;
+
+    tokens.forEach((token) => {
+      const match = this.state.components.find((c) => {
+        const ru = (c.name_ru || "").toLowerCase();
+        const id = c.id.toLowerCase();
+        return ru.includes(token) || id.includes(token);
+      });
+
+      if (match) {
+        if (!this.state.manualSelection.has(match.id)) {
+          this.state.manualSelection.set(match.id, {
+            state: match.default_role === "support" ? "bg" : "main",
+          });
+        }
+      }
+    });
+
+    this.catalogGrid.querySelectorAll(".catalog-item").forEach((card) => {
+      const id = card.dataset.id;
+      const isSelected = this.state.manualSelection.has(id);
+      card.classList.toggle("selected", isSelected);
+      const roleBtn = card.querySelector(".role-toggle");
+      if (isSelected && roleBtn) {
+        const cur = this.state.manualSelection.get(id);
+        roleBtn.textContent = cur.state === "main" ? "Главный" : "Фоновый";
+        roleBtn.classList.toggle("is-bg", cur.state === "bg");
+      }
+    });
+
+    this.updateSelectedCount();
+    this.setStatus(`По названию выбрано компонентов: ${this.state.manualSelection.size}`);
+  }
+
+  openPaletteModal() {
+    this.paletteErrorAlert.classList.add("hidden");
+    this.paletteErrorAlert.textContent = "";
+    this.paletteModal.classList.remove("hidden");
+  }
+
+  closePaletteModal() {
+    this.paletteModal.classList.add("hidden");
+  }
+
+  async saveCustomPalette() {
+    this.paletteErrorAlert.classList.add("hidden");
+    this.paletteErrorAlert.textContent = "";
+
+    const isJsonTab = document.querySelector('.modal-tab-btn[data-modaltab="jsonTab"]').classList.contains("active");
+    let payload = {};
+
+    if (isJsonTab) {
+      const rawJson = this.paletteJsonInput.value.trim();
+      try {
+        payload = JSON.parse(rawJson);
+      } catch (e) {
+        this.paletteErrorAlert.textContent = "Невалидный JSON: проверьте синтаксис";
+        this.paletteErrorAlert.classList.remove("hidden");
+        return;
+      }
+    } else {
+      payload = {
+        name: this.paletteNameInput.value.trim() || "Пользовательская",
+        bg_light: this.bgLightColor.value,
+        bg_mid: this.bgMidColor.value,
+        bg_dark: this.bgDarkColor.value,
+        obj_accent_1: this.obj1Color.value,
+        obj_accent_2: this.obj2Color.value,
+        obj_accent_3: this.obj3Color.value,
+        stroke: "#181817",
+        white: "#FFFFFF",
+      };
+    }
+
+    try {
+      this.savePaletteBtn.disabled = true;
+      const res = await fetch("/api/palettes/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        const errText = data.error || (data.errors ? JSON.stringify(data.errors) : "Ошибка создания палитры");
+        this.paletteErrorAlert.textContent = errText;
+        this.paletteErrorAlert.classList.remove("hidden");
+        return;
+      }
+
+      const pal = data.palette;
+      const btn = document.createElement("button");
+      btn.className = "swatch-btn";
+      btn.dataset.palette = pal.id;
+      btn.title = pal.name;
+      btn.innerHTML = `
+        <span class="swatch-color" style="background: ${pal.bg_light};"></span>
+        <span class="swatch-color" style="background: ${pal.bg_dark};"></span>
+        <span class="swatch-color" style="background: ${pal.obj_accent_1};"></span>
+      `;
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".swatch-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        this.changePalette(pal.id);
+      });
+
+      this.paletteSwatchesContainer.insertBefore(btn, this.addPaletteBtn);
+
+      document.querySelectorAll(".swatch-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      this.closePaletteModal();
+      this.changePalette(pal.id);
+    } catch (err) {
+      console.error(err);
+      this.paletteErrorAlert.textContent = "Сетевая ошибка при загрузке палитры";
+      this.paletteErrorAlert.classList.remove("hidden");
+    } finally {
+      this.savePaletteBtn.disabled = false;
+    }
   }
 
   async runMetaphor() {

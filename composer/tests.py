@@ -146,3 +146,39 @@ class ComposerApiTests(TestCase):
         assert data["success"] is True
         assert "<svg" in data["svg_content"]
         assert len(data["objects"]) == 3
+
+    def test_api_create_custom_palette_valid(self):
+        resp = self.client.post("/api/palettes/", {
+            "name": "Тестовая Валидная",
+            "bg_light": "#112233",
+            "bg_mid": "#223344",
+            "bg_dark": "#334455",
+            "obj_accent_1": "#FFEEDD",
+            "obj_accent_2": "#EECCBB",
+            "obj_accent_3": "#DD9988",
+            "stroke": "#000000",
+            "white": "#FFFFFF",
+        }, format="json")
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["success"] is True
+        assert data["palette"]["name"] == "Тестовая Валидная"
+        assert data["palette"]["id"].startswith("custom_")
+
+    def test_api_create_custom_palette_rule_violation(self):
+        # Акцент объекта используется как цвет фона
+        resp = self.client.post("/api/palettes/", {
+            "name": "Нарушающая Правило",
+            "bg_light": "#FFEEDD",  # Совпадает с obj_accent_1!
+            "bg_mid": "#223344",
+            "bg_dark": "#334455",
+            "obj_accent_1": "#FFEEDD",
+            "obj_accent_2": "#EECCBB",
+            "obj_accent_3": "#DD9988",
+            "stroke": "#000000",
+            "white": "#FFFFFF",
+        }, format="json")
+        assert resp.status_code == 400
+        data = resp.json()
+        assert data["success"] is False
+        assert "не могут быть использованы в качестве цветов фона" in data["error"]
