@@ -8,9 +8,11 @@ dependencies = [
     "django>=6.1.2",
     "django-cors-headers>=4.9.0",
     "djangorestframework>=3.18.3",
+    "gunicorn>=26.2.0",
     "numpy>=2.5.4",
     "pysocks>=1.7.1",
     "pytest>=9.2.0",
     "pytest-django>=4.14.0",
     "requests>=2.34.2",
+    "whitenoise>=6.12.0",
 ]

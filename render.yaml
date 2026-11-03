@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: svg-illustration-composer
+    runtime: docker
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: PORT
+        value: 10000

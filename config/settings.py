@@ -37,6 +37,7 @@ SECRET_KEY = "django-insecure-e$6-7*a6w@dbtd*ejo@9fx-58qfa3w457j$^wxggrwg5+@6!)e
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+CSRF_TRUSTED_ORIGINS = ["https://*.trycloudflare.com", "https://*.onrender.com", "http://localhost:8001", "http://127.0.0.1:8001"]
 
 
 # Application definition
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
